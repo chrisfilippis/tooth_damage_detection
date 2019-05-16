@@ -210,3 +210,6 @@ dmypy.json
 .pyre/
 
 # End of https://www.gitignore.io/api/pycharm,python
+
+/data/output/
+mask_rcnn_coco.h5

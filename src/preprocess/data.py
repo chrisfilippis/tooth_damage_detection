@@ -1,5 +1,6 @@
 from read_roi import read_roi_zip
 from os import listdir
+import os
 from os.path import isfile, join
 import json
 from shutil import copyfile
@@ -68,10 +69,18 @@ def get_image_name(zipfile_name):
     return file_parts[0] + '.' + file_parts[1]
 
 
+def empty_directory(directory_path):
+    for f in [f for f in os.listdir(directory_path)]:
+        os.remove(os.path.join(directory_path, f))
+
+
 def main():
+
     input_directory = 'C:\\Projects\\tooth_damage_detection\\data\\annotator\\'
     images_directory = 'C:\\Projects\\tooth_damage_detection\\data\\annotator\\'
-    output_directory = 'C:\\Projects\\tooth_damage_detection\\data\\annotator\\output\\'
+    output_directory = 'C:\\Projects\\tooth_damage_detection\\data\\output\\'
+
+    empty_directory(output_directory)
     annotation_files = get_input_files(input_directory)
 
     final_regions_data = {}
