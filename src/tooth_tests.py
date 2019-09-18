@@ -16,7 +16,10 @@ import mrcnn.model as modellib
 from mrcnn import visualize
 from mrcnn.model import log
 from pycocotools.coco import COCO
+import tensorflow as tf
 from src.preprocess_coco import process_data
+import matplotlib
+matplotlib.use('tkagg')
 
 # Directory to save logs and trained model
 
@@ -216,45 +219,48 @@ class ToothDataset(utils.Dataset):
         return m
 
 
-input("Start training?")
-
 config = ToothConfig()
 config.display()
 
-input("Loading training dataset")
 print("Loading training dataset")
 # Training dataset
 dataset_train = ToothDataset()
 dataset_train.load_data(training_data_dir)
 dataset_train.prepare()
 
-input("Loading validation dataset")
 print("Loading validation dataset")
 # Validation dataset
 dataset_val = ToothDataset()
 dataset_val.load_data(validation_data_dir)
 dataset_val.prepare()
 
+print(dataset_val.class_names)
+
 inference_config = ToothConfig()
 
-# Recreate the model in inference mode
-model = modellib.MaskRCNN(mode="inference",
-                          config=inference_config,
-                          model_dir=MODEL_DIR)
+DEVICE = "/gpu:1"  # /cpu:0 or /gpu:0
+
+with tf.device(DEVICE):
+    # Recreate the model in inference mode
+    model = modellib.MaskRCNN(mode="inference",
+                              config=inference_config,
+                              model_dir=MODEL_DIR)
 
 # Get path to saved weights
 # Either set a specific path or find last trained weights
 # model_path = os.path.join(ROOT_DIR, ".h5 file name here")
 model_path = model.find_last()
 
-input("last trained weights" + model_path)
-
 # Load trained weights
 print("Loading weights from ", model_path)
 model.load_weights(model_path, by_name=True)
-
+visualize.display_weight_stats(model)
+exit()
 # Test on a random image
 img_id = random.choice(dataset_val.image_ids)
+
+print("img_id ", img_id)
+
 original_image, image_meta, gt_class_id, gt_bbox, gt_mask = \
     modellib.load_image_gt(dataset_val, inference_config,
                            img_id, use_mini_mask=False)
@@ -270,11 +276,10 @@ visualize.display_instances(original_image, gt_bbox, gt_mask, gt_class_id,
                             dataset_train.class_names, figsize=(8, 8))
 
 results = model.detect([original_image], verbose=1)
+
 r = results[0]
 print(r['class_ids'])
-input("visualize.display_instances")
 print(r['masks'])
-input("visualize.display_instances")
 print(r['rois'])
 input("visualize.display_instances")
 
@@ -283,7 +288,7 @@ visualize.display_instances(original_image, r['rois'], r['masks'], r['class_ids'
 
 # Compute VOC-Style mAP @ IoU=0.5
 # Running on 10 images. Increase for better accuracy.
-image_ids = np.random.choice(dataset_val.image_ids, 10)
+image_ids = np.random.choice(dataset_val.image_ids, 2)
 APs = []
 for img_id in image_ids:
     # Load image and ground truth data

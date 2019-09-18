@@ -2,9 +2,12 @@ import os
 import sys
 import random
 import numpy as np
+import tensorflow as tf
 from pycocotools import mask as maskUtils
 import matplotlib.pyplot as plt
 
+import json
+import time
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../../")
 
@@ -17,6 +20,8 @@ from mrcnn import visualize
 from mrcnn.model import log
 from pycocotools.coco import COCO
 from src.preprocess_coco import process_data
+import matplotlib
+matplotlib.use('tkagg')
 
 # Directory to save logs and trained model
 
@@ -28,9 +33,9 @@ training_data_dir = data_dir + 'output\\training\\'
 validation_data_dir = data_dir + 'output\\validation\\'
 
 annotation_file = '_annotation_data.json'
-
-process_data(data_dir + 'annotator\\training\\', training_data_dir, annotation_file)
-process_data(data_dir + 'annotator\\validation\\', validation_data_dir, annotation_file)
+force_load = False
+process_data(data_dir + 'annotator\\training_sample\\', training_data_dir, annotation_file, force_load=force_load)
+process_data(data_dir + 'annotator\\validation\\', validation_data_dir, annotation_file, force_load=force_load)
 
 # Local path to trained weights file
 COCO_MODEL_PATH = os.path.join(data_dir, model_file)
@@ -46,12 +51,12 @@ class ToothConfig(Config):
     to the toy shapes dataset.
     """
     # Give the configuration a recognizable name
-    NAME = "tooth"
+    NAME = "coco"
 
     # Train on 1 GPU and 8 images per GPU. We can put multiple images on each
     # GPU because the images are small. Batch size is 8 (GPUs * images/GPU).
     GPU_COUNT = 1
-    IMAGES_PER_GPU = 1
+    IMAGES_PER_GPU = 2
 
     # Number of classes (including background)
     NUM_CLASSES = 1 + 6  # background + 3 shapes
@@ -115,6 +120,7 @@ class ToothDataset(utils.Dataset):
 
         # Add images
         for i in images:
+
             self.add_image(
                 "coco", image_id=i,
                 path=os.path.join(dataset_dir, coco.imgs[i]['file_name']),
@@ -139,20 +145,23 @@ class ToothDataset(utils.Dataset):
         """
         # If not a COCO image, delegate to parent class.
         image_info = self.image_info[image_id]
-        if image_info["source"] != "coco":
-            return super(ToothDataset, self).load_mask(image_id)
+        # if image_info["source"] != "coco":
+        #     return super(ToothDataset, self).load_mask(image_id)
 
         instance_masks = []
         class_ids = []
         annotations = self.image_info[image_id]["annotations"]
+
         # Build mask of shape [height, width, instance_count] and list
         # of class IDs that correspond to each channel of the mask.
         for annotation in annotations:
             class_id = self.map_source_class_id(
                 "coco.{}".format(annotation['category_id']))
+
             if class_id:
                 m = self.annToMask(annotation, image_info["height"],
                                    image_info["width"])
+
                 # Some objects are so small that they're less than 1 pixel area
                 # and end up rounded out. Skip those objects.
                 if m.max() < 1:
@@ -169,6 +178,7 @@ class ToothDataset(utils.Dataset):
                 class_ids.append(class_id)
 
         # Pack instance masks into an array
+
         if class_ids:
             mask_ = np.stack(instance_masks, axis=2).astype(np.bool)
             class_ids = np.array(class_ids, dtype=np.int32)
@@ -216,19 +226,15 @@ class ToothDataset(utils.Dataset):
         return m
 
 
-input("Start training?")
-
 config = ToothConfig()
 config.display()
 
-input("Loading training dataset")
 print("Loading training dataset")
 # Training dataset
 dataset_train = ToothDataset()
 dataset_train.load_data(training_data_dir)
 dataset_train.prepare()
 
-input("Loading validation dataset")
 print("Loading validation dataset")
 # Validation dataset
 dataset_val = ToothDataset()
@@ -236,16 +242,17 @@ dataset_val.load_data(validation_data_dir)
 dataset_val.prepare()
 
 
-input("Create model in training mod")
 print("Create model in training mod")
-# Create model in training mode
-model = modellib.MaskRCNN(mode="training", config=config,
-                          model_dir=MODEL_DIR)
+DEVICE = '/gpu:1'  # /gpu:1  /cpu:0 or /gpu:0
+
+with tf.device(DEVICE):
+    # Create model in training mode
+    model = modellib.MaskRCNN(mode="training", config=config,
+                              model_dir=MODEL_DIR)
 
 # Which weights to start with?
 init_with = "coco"  # imagenet, coco, or last
 
-input("load weights")
 print("load weights")
 
 if init_with == "imagenet":
@@ -261,7 +268,6 @@ elif init_with == "last":
     # Load the last model you trained and continue training
     model.load_weights(model.find_last(), by_name=True)
 
-input("Train the head branches")
 print("Train the head branches")
 # Train the head branches
 # Passing layers="heads" freezes all layers except the head
@@ -272,16 +278,15 @@ model.train(dataset_train, dataset_val,
             epochs=1,
             layers='heads')
 
-# input("Fine tune all layers")
-# print("Fine tune all layers")
+print("Fine tune all layers")
 # # Fine tune all layers
 # # Passing layers="all" trains all layers. You can also
 # # pass a regular expression to select which layers to
 # # train by name pattern.
-# model.train(dataset_train, dataset_val,
-#             learning_rate=config.LEARNING_RATE / 10,
-#             epochs=2,
-#             layers="all")
+model.train(dataset_train, dataset_val,
+            learning_rate=config.LEARNING_RATE / 10,
+            epochs=2,
+            layers="all")
 
 
 # Save weights
@@ -289,8 +294,6 @@ model.train(dataset_train, dataset_val,
 # Uncomment to save manually
 # model_path = os.path.join(MODEL_DIR, "mask_rcnn_shapes.h5")
 # model.keras_model.save_weights(model_path)
-
-input("training_completed")
 
 
 class InferenceConfig(ToothConfig):
@@ -310,8 +313,6 @@ model = modellib.MaskRCNN(mode="inference",
 # model_path = os.path.join(ROOT_DIR, ".h5 file name here")
 model_path = model.find_last()
 
-input("last trained weights" + model_path)
-
 # Load trained weights
 print("Loading weights from ", model_path)
 model.load_weights(model_path, by_name=True)
@@ -328,7 +329,6 @@ log("gt_class_id", gt_class_id)
 log("gt_bbox", gt_bbox)
 log("gt_mask", gt_mask)
 
-input("visualize.display_instances")
 visualize.display_instances(original_image, gt_bbox, gt_mask, gt_class_id,
                             dataset_train.class_names, figsize=(8, 8))
 

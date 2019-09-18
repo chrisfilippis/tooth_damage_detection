@@ -55,12 +55,12 @@ def create_annotation_json_data_for_image(image_name, regions, name_mapping_dic)
         annot = []
 
         for ii in range(0, len(region[1])):
-            annot.append(int(region[1][ii]))
-            annot.append(int(region[2][ii]))
+            annot.append((region[1][ii]))
+            annot.append((region[2][ii]))
 
         annotation_data = {
-            "id": image_name + '_' + str(i),
-            "category_id": i,
+            "id": (name_mapping_dic[image_name] * 10000) + i,
+            "category_id": region[0],
             "iscrowd": 0,
             "segmentation": [annot],
             "image_id": name_mapping_dic[image_name],
@@ -73,9 +73,15 @@ def create_annotation_json_data_for_image(image_name, regions, name_mapping_dic)
 
 
 def create_final_coco_json(image_json, annotation_json):
+
+    final_annotation_json = []
+
+    for ii in annotation_json:
+        for i in ii:
+            final_annotation_json.append(i)
     return {
         "images": image_json,
-        "annotations": annotation_json[0],
+        "annotations": final_annotation_json,
         "info": {
             "description": "COCO 2017 Dataset",
             "url": "http://cocodataset.org",
@@ -102,7 +108,7 @@ def get_image_name(zipfile_name, name_mapping_dict):
     name = zipfile_name.replace('ANN_', '').split('_jpg')[0] + '.jpg'
 
     if name not in name_mapping_dict:
-        name_mapping_dict[name] = len(name_mapping_dict)
+        name_mapping_dict[name] = len(name_mapping_dict) + 1
 
     return name, name_mapping_dict
 
@@ -112,12 +118,12 @@ def empty_directory(directory_path):
         os.remove(os.path.join(directory_path, f))
 
 
-def process_data(input_directory, output_directory, annotation_file_name='region_data.json'):
+def process_data(input_directory, output_directory, annotation_file_name='region_data.json', force_load=False):
     # input_directory = 'C:\\Projects\\tooth_damage_detection\\data\\annotator\\'
     # images_directory = 'C:\\Projects\\tooth_damage_detection\\data\\annotator\\'
     # output_directory = 'C:\\Projects\\tooth_damage_detection\\data\\output\\'
 
-    if os.path.isfile(output_directory + annotation_file_name):
+    if not force_load and os.path.isfile(output_directory + annotation_file_name):
         return;
 
     empty_directory(output_directory)
@@ -126,7 +132,7 @@ def process_data(input_directory, output_directory, annotation_file_name='region
     final_images_data = []
     final_annotations_data = []
 
-    name_mapping = dict();
+    name_mapping = dict()
 
     for annotation_filename in annotation_files:
         print('opening... ' + annotation_filename)
@@ -135,10 +141,7 @@ def process_data(input_directory, output_directory, annotation_file_name='region
         name_mapping = name_mappings
         annotation_file_path = input_directory + annotation_filename
 
-        try:
-            polygons = get_roi_files_from_zipfile(annotation_file_path, 'superpixel')
-        except:
-            continue
+        polygons = get_roi_files_from_zipfile(annotation_file_path, 'superpixel')
 
         regions = process_regions_of_interest(polygons)
         print(str(len(regions)) + ' regions found')
@@ -146,7 +149,9 @@ def process_data(input_directory, output_directory, annotation_file_name='region
         copyfile(input_directory + image_name, output_directory + image_name)
 
         final_images_data.append(create_image_json_data_for_image(image_name, name_mapping))
-        final_annotations_data.append(create_annotation_json_data_for_image(image_name, regions, name_mapping))
+        image_json = create_annotation_json_data_for_image(image_name, regions, name_mapping)
+        final_annotations_data.append(image_json)
 
     with open(output_directory + annotation_file_name, 'w') as outfile:
-        json.dump(create_final_coco_json(final_images_data, final_annotations_data), outfile)
+        file_json = create_final_coco_json(final_images_data, final_annotations_data)
+        json.dump(file_json, outfile)
