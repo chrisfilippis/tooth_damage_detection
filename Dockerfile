@@ -3,6 +3,9 @@ FROM tensorflow/tensorflow:latest-gpu-py3
 WORKDIR /var/project/data/annotator
 COPY ./data/annotator /var/project/data/annotator
 
+WORKDIR /var/project/src
+COPY ./src /var/project/src
+
 COPY requirements.txt /var/project/
 
 RUN apt-get install -y git
