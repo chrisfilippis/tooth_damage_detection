@@ -12,9 +12,6 @@ from mrcnn import visualize
 from mrcnn.model import log
 from pycocotools.coco import COCO
 from preprocess_coco import process_data
-import matplotlib
-matplotlib.use('TKAgg')
-import matplotlib.pyplot as plt
 
 
 class ToothConfig(Config):
@@ -31,18 +28,6 @@ class ToothConfig(Config):
 
     # Number of classes (including background)
     NUM_CLASSES = 1 + 6  # background + 3 shapes
-
-
-def get_ax(rows=1, cols=1, size=8):
-    """Return a Matplotlib Axes array to be used in
-    all visualizations in the notebook. Provide a
-    central point to control graph sizes.
-
-    Change the default size attribute to control the size
-    of rendered images
-    """
-    _, ax = plt.subplots(rows, cols, figsize=(size * cols, size * rows))
-    return ax
 
 
 class ToothDataset(utils.Dataset):
@@ -336,7 +321,7 @@ def main():
 
     r = results[0]
     visualize.display_instances(original_image, r['rois'], r['masks'], r['class_ids'],
-                                dataset_val.class_names, r['scores'], ax=get_ax())
+                                dataset_val.class_names, r['scores'], figsize=(8, 8))
 
     # Compute VOC-Style mAP @ IoU=0.5
     # Running on 10 images. Increase for better accuracy.
