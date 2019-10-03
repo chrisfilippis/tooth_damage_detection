@@ -185,7 +185,22 @@ class ToothDataset(utils.Dataset):
 def main():
     # Directory to save logs and trained model
 
+    import argparse
+
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(
+        description='Train Mask R-CNN on MS COCO.')
+
+    parser.add_argument('--data_dir', required=False, help="Path to weights .h5 file or 'coco'")
+
+    args = parser.parse_args()
+    print("data_dir: ", args.data_dir)
+
     data_dir = 'C:\\Projects\\tooth_damage_detection\\data\\'
+
+    if args.data_dir is not None:
+        data_dir = args.data_dir
+
     model_file = "mask_rcnn_coco.h5"
     DEVICE = '/gpu:1'  # /gpu:1  /cpu:0 or /gpu:0
 
