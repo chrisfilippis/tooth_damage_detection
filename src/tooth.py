@@ -170,19 +170,27 @@ def main():
         description='Train Mask R-CNN on MS COCO.')
 
     parser.add_argument('--data_dir', required=False, help="Path to weights .h5 file or 'coco'")
+    parser.add_argument('--model_dir', required=False, help="Path to weights .h5 file or 'coco'")
+    parser.add_argument('--init_with', required=False, default="coco", help="imagenet, coco, or last")
 
     args = parser.parse_args()
+
     print("data_dir: ", args.data_dir)
+    print("model_dir: ", args.model_dir)
+    print("init_with: ", args.init_with)
 
     data_dir = 'C:\\Projects\\tooth_damage_detection\\data\\'
+    MODEL_DIR = os.path.join(data_dir, "logs")
 
     if args.data_dir is not None:
         data_dir = args.data_dir
 
+    if args.model_dir is not None:
+        MODEL_DIR = args.model_dir
+
     model_file = "mask_rcnn_coco.h5"
     DEVICE = '/gpu:1'  # /gpu:1  /cpu:0 or /gpu:0
 
-    MODEL_DIR = os.path.join(data_dir, "logs")
     training_data_dir = data_dir + 'output\\training\\'
     validation_data_dir = data_dir + 'output\\validation\\'
     unknown_data_dir = data_dir + 'output\\unknown\\'
@@ -190,7 +198,7 @@ def main():
     annotation_file = '_annotation_data.json'
 
     # Which weights to start with?
-    init_with = "last"  # imagenet, coco, or last
+    init_with = args.init_with  # imagenet, coco, or last
 
     force_load = False
     process_data(data_dir + 'annotator\\training\\', training_data_dir, annotation_file, force_load=force_load)
