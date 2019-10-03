@@ -3,7 +3,6 @@ import random
 import numpy as np
 import tensorflow as tf
 from pycocotools import mask as maskUtils
-import matplotlib.pyplot as plt
 import imgaug
 
 from mrcnn.config import Config
@@ -14,8 +13,8 @@ from mrcnn.model import log
 from pycocotools.coco import COCO
 from preprocess_coco import process_data
 import matplotlib
-
-matplotlib.use('tkagg')
+matplotlib.use('TKAgg')
+import matplotlib.pyplot as plt
 
 
 class ToothConfig(Config):
