@@ -1,5 +1,4 @@
 import os
-import sys
 import random
 import numpy as np
 import tensorflow as tf
@@ -7,11 +6,7 @@ from pycocotools import mask as maskUtils
 import matplotlib.pyplot as plt
 import imgaug
 
-# Root directory of the project
-ROOT_DIR = os.path.abspath("../../")
 
-# Import Mask RCNN
-sys.path.append(ROOT_DIR)  # To find local version of the library
 from mrcnn.config import Config
 from mrcnn import utils
 import mrcnn.model as modellib
@@ -283,6 +278,7 @@ def main():
                     augmentation=augmentation)
 
         print("Fine tune all layers")
+
     # # Fine tune all layers
     # # Passing layers="all" trains all layers. You can also
     # # pass a regular expression to select which layers to
@@ -292,10 +288,10 @@ def main():
     #             epochs=2,
     #             layers="all")
 
-        # model.train(dataset_train, dataset_val,
-        #             learning_rate=config.LEARNING_RATE / 10,
-        #             epochs=60,
-        #             layers='4+')
+    # model.train(dataset_train, dataset_val,
+    #             learning_rate=config.LEARNING_RATE / 10,
+    #             epochs=60,
+    #             layers='4+')
 
     # Save weights
     # Typically not needed because callbacks save after every epoch

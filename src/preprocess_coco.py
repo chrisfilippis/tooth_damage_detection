@@ -6,6 +6,7 @@ import json
 from shutil import copyfile
 import zipfile
 
+
 def get_input_files(directory_path, extension='zip'):
     return [f for f in listdir(directory_path) if isfile(join(directory_path, f)) and f.endswith('.' + extension)]
 

@@ -1,3 +1,7 @@
+imgaug
+matplotlib
+pycocotools
+mrcnn
 absl-py==0.7.1
 astor==0.7.1
 certifi==2019.3.9
