@@ -12,5 +12,6 @@ RUN apt-get install -y git
 
 RUN pip install Cython
 RUN pip install --requirement /var/project/requirements.txt
+RUN apt-get install -y libsm6 libxext6 libxrender-dev
 
-# CMD python tooth.py --data_dir=/var/project/data --logs_dir=/var/project/src/logs --init_with=coco
+# CMD python tooth.py --data_dir=/var/project/data/ --model_dir=/var/project/src/logs/ --init_with=coco

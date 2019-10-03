@@ -191,9 +191,9 @@ def main():
     model_file = "mask_rcnn_coco.h5"
     DEVICE = '/gpu:1'  # /gpu:1  /cpu:0 or /gpu:0
 
-    training_data_dir = data_dir + 'output\\training\\'
-    validation_data_dir = data_dir + 'output\\validation\\'
-    unknown_data_dir = data_dir + 'output\\unknown\\'
+    training_data_dir = data_dir + 'output/training/'
+    validation_data_dir = data_dir + 'output/validation/'
+    unknown_data_dir = data_dir + 'output/unknown/'
 
     annotation_file = '_annotation_data.json'
 
@@ -201,9 +201,9 @@ def main():
     init_with = args.init_with  # imagenet, coco, or last
 
     force_load = False
-    process_data(data_dir + 'annotator\\training\\', training_data_dir, annotation_file, force_load=force_load)
-    process_data(data_dir + 'annotator\\validation\\', validation_data_dir, annotation_file, force_load=force_load)
-    process_data(data_dir + 'annotator\\unknown\\', unknown_data_dir, annotation_file, force_load=force_load)
+    process_data(data_dir + 'annotator/training/', training_data_dir, annotation_file, force_load=force_load)
+    process_data(data_dir + 'annotator/validation/', validation_data_dir, annotation_file, force_load=force_load)
+    process_data(data_dir + 'annotator/unknown/', unknown_data_dir, annotation_file, force_load=force_load)
 
     # Local path to trained weights file
     COCO_MODEL_PATH = os.path.join(data_dir, model_file)
