@@ -6,14 +6,13 @@ from pycocotools import mask as maskUtils
 import matplotlib.pyplot as plt
 import imgaug
 
-
 from mrcnn.config import Config
 from mrcnn import utils
 import mrcnn.model as modellib
 from mrcnn import visualize
 from mrcnn.model import log
 from pycocotools.coco import COCO
-from src.preprocess_coco import process_data
+from preprocess_coco import process_data
 import matplotlib
 
 matplotlib.use('tkagg')
