@@ -1,10 +1,10 @@
-from read_roi import read_roi_zip
+from read_roi import read_roi_zip, read_roi_file
 from os import listdir
 import os
 from os.path import isfile, join
 import json
 from shutil import copyfile
-
+import zipfile
 
 def get_input_files(directory_path, extension='zip'):
     return [f for f in listdir(directory_path) if isfile(join(directory_path, f)) and f.endswith('.' + extension)]
@@ -22,10 +22,20 @@ def get_polygon_info(polygon):
 
 
 def get_roi_files_from_zipfile(annotation_file_path, filter_clause='superpixel'):
-    annotation_polygon = read_roi_zip(annotation_file_path)
+    annotation_polygon = filter_zip(annotation_file_path)
     roi = list(annotation_polygon.items())
     polygons = get_polygons(roi)
     return [poly for poly in polygons if filter_clause not in poly[0]]
+
+
+def filter_zip(zip_path):
+    from collections import OrderedDict
+    rois = OrderedDict()
+    zf = zipfile.ZipFile(zip_path)
+    for n in zf.namelist():
+        if n.endswith('.roi'):
+            rois.update(read_roi_file(zf.open(n)))
+    return rois
 
 
 def process_regions_of_interest(roi_files):
@@ -33,6 +43,13 @@ def process_regions_of_interest(roi_files):
 
     for region in roi_files:
         dental_class = int(region[0].split('-')[0])
+
+        if dental_class == 0:
+            continue
+
+        if dental_class > 6:
+            dental_class = 6
+
         regions.append((dental_class, region[1], region[2]))
 
     return regions
@@ -91,12 +108,12 @@ def create_final_coco_json(image_json, annotation_json):
             "date_created": "2017/09/01"
         },
         "categories": [
-            {"id": 0, "name": "cat_0"},
             {"id": 1, "name": "cat_1"},
             {"id": 2, "name": "cat_2"},
             {"id": 3, "name": "cat_3"},
             {"id": 4, "name": "cat_4"},
-            {"id": 5, "name": "cat_5"}
+            {"id": 5, "name": "cat_5"},
+            {"id": 6, "name": "cat_6"}
         ]
     }
 
