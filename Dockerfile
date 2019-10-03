@@ -1,8 +1,6 @@
 FROM tensorflow/tensorflow:latest-gpu-py3
 
 WORKDIR /var/project/data
-COPY ./data /var/project/data
-
 WORKDIR /var/project/src
 COPY ./src /var/project/src
 
