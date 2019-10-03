@@ -52,5 +52,5 @@ termcolor==1.1.0
 -e git+https://github.com/chrisfilippis/tooth_damage_detection.git@821e8ecefe59d5f92db12c43b3fbe987758d8fba#egg=tooth_datamage
 traitlets==4.3.2
 wcwidth==0.1.7
-Werkzeug==0.15.2
+Werkzeug==0.15.3
 wincertstore==0.2
