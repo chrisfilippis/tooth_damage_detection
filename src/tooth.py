@@ -43,7 +43,7 @@ class ToothDataset(utils.Dataset):
         auto_download: Automatically download and unzip MS-COCO images and annotations
         """
 
-        coco = COCO(dataset_dir + "\\" + annotation_filename)
+        coco = COCO(dataset_dir + "//" + annotation_filename)
 
         # Load all classes or
         classes = sorted(coco.getCatIds())
