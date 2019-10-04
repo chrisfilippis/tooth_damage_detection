@@ -24,7 +24,7 @@ class ToothConfig(Config):
 
     # Train on 1 GPU and 8 images per GPU. We can put multiple images on each
     # GPU because the images are small. Batch size is 8 (GPUs * images/GPU).
-    IMAGES_PER_GPU = 1
+    IMAGES_PER_GPU = 4
 
     # Number of classes (including background)
     NUM_CLASSES = 1 + 6  # background + 3 shapes
@@ -233,10 +233,9 @@ def main():
 
     print("Create model in training mod")
 
-    with tf.device(DEVICE):
-        # Create model in training mode
-        model = modellib.MaskRCNN(mode="training", config=config,
-                                  model_dir=MODEL_DIR)
+    # Create model in training mode
+    model = modellib.MaskRCNN(mode="training", config=config,
+                              model_dir=MODEL_DIR)
 
     print("load weights")
 
@@ -261,14 +260,14 @@ def main():
     # Passing layers="heads" freezes all layers except the head
     # layers. You can also pass a regular expression to select
     # which layers to train by name pattern.
-    with tf.device(DEVICE):
-        model.train(dataset_train, dataset_val,
-                    learning_rate=config.LEARNING_RATE,
-                    epochs=20,
-                    layers='heads',
-                    augmentation=augmentation)
 
-        print("Fine tune all layers")
+    model.train(dataset_train, dataset_val,
+                learning_rate=config.LEARNING_RATE,
+                epochs=20,
+                layers='heads',
+                augmentation=augmentation)
+
+    print("Fine tune all layers")
 
     # # Fine tune all layers
     # # Passing layers="all" trains all layers. You can also
