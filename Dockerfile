@@ -1,4 +1,4 @@
-FROM tensorflow/tensorflow:1.13.2-gpu-py3
+FROM tensorflow/tensorflow:1.13.1-gpu-py3
 
 WORKDIR /var/project/data/annotator
 COPY ./data/annotator /var/project/data/annotator
