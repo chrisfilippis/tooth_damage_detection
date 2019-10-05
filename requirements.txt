@@ -48,7 +48,7 @@ tensorboard==1.13.1
 tensorflow-gpu==1.13.1
 tensorflow-estimator==1.13.0
 termcolor==1.1.0
--e git+https://github.com/matterport/Mask_RCNN
+-e git+https://github.com/matterport/Mask_RCNN#egg=mrcnn
 traitlets==4.3.2
 wcwidth==0.1.7
 Werkzeug==0.15.2
