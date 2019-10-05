@@ -1,4 +1,4 @@
-FROM tensorflow/tensorflow:latest-gpu-py3
+FROM tensorflow/tensorflow:1.13-gpu-py3
 
 WORKDIR /var/project/data/annotator
 COPY ./data/annotator /var/project/data/annotator
@@ -10,7 +10,7 @@ COPY requirements.txt /var/project/
 
 RUN apt-get install -y git
 
-RUN pip install Cython ipython imgaug
-RUN apt-get install -y libsm6 libxext6 libxrender-dev
+RUN pip install Cython
+RUN pip install --requirement /var/project/requirements.txt
 
 # CMD python tooth.py --data_dir=/var/project/data/ --model_dir=/var/project/src/logs/ --init_with=coco
