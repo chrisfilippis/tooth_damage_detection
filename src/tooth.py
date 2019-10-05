@@ -1,7 +1,6 @@
 import os
 import random
 import numpy as np
-import tensorflow as tf
 from pycocotools import mask as maskUtils
 import imgaug
 
@@ -15,6 +14,7 @@ from preprocess_coco import process_data
 
 
 class ToothConfig(Config):
+
     """Configuration for training on the toy shapes dataset.
     Derives from the base Config class and overrides values specific
     to the toy shapes dataset.
@@ -24,7 +24,7 @@ class ToothConfig(Config):
 
     # Train on 1 GPU and 8 images per GPU. We can put multiple images on each
     # GPU because the images are small. Batch size is 8 (GPUs * images/GPU).
-    IMAGES_PER_GPU = 4
+    IMAGES_PER_GPU = 2
 
     # Number of classes (including background)
     NUM_CLASSES = 1 + 6  # background + 3 shapes

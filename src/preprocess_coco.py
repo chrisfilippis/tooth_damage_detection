@@ -131,6 +131,15 @@ def get_image_name(zipfile_name, name_mapping_dict):
     return name, name_mapping_dict
 
 
+def ensure_directory_existence(directory_path):
+    if not os.path.isfile(directory_path):
+        try:
+            os.mkdir(directory_path)
+        except OSError:
+            print("Creation of the directory %s failed" % directory_path)
+        return;
+
+
 def empty_directory(directory_path):
     for f in [f for f in os.listdir(directory_path)]:
         os.remove(os.path.join(directory_path, f))
@@ -144,6 +153,7 @@ def process_data(input_directory, output_directory, annotation_file_name='region
     if not force_load and os.path.isfile(output_directory + annotation_file_name):
         return;
 
+    ensure_directory_existence(output_directory)
     empty_directory(output_directory)
     annotation_files = get_input_files(input_directory)
 
