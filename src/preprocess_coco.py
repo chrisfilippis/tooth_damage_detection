@@ -132,7 +132,7 @@ def get_image_name(zipfile_name, name_mapping_dict):
 
 
 def ensure_directory_existence(directory_path):
-    if not os.path.isfile(directory_path):
+    if not os.path.isdir(directory_path):
         try:
             os.mkdir(directory_path)
         except OSError:
