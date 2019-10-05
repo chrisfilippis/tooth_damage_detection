@@ -49,7 +49,7 @@ tensorboard==1.13.1
 tensorflow-gpu==1.13.1
 tensorflow-estimator==1.13.0
 termcolor==1.1.0
--e git+https://github.com/chrisfilippis/tooth_damage_detection.git@918e1cb4ebce35308ecc5dc8ed232f043a1a1a5c#egg=tooth_datamage
+-e git+https://github.com/chrisfilippis/tooth_damage_detection.git@620012e9e83f468b32c3022ba1683f09dde1b84c#egg=tooth_datamage
 traitlets==4.3.2
 wcwidth==0.1.7
 Werkzeug==0.15.2
