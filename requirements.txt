@@ -19,7 +19,6 @@ Keras-Applications==1.0.7
 Keras-Preprocessing==1.0.9
 kiwisolver==1.1.0
 Markdown==3.1
-mask-rcnn==2.1
 matplotlib==3.0.3
 mkl-fft==1.0.12
 mkl-random==1.0.2
