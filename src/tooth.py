@@ -29,7 +29,12 @@ class ToothConfig(Config):
     # Number of classes (including background)
     NUM_CLASSES = 1 + 6  # background + 3 shapes
 
-    WEIGHT_DECAY = 0.001
+    WEIGHT_DECAY = 0.0001
+
+    IMAGE_MIN_DIM = 768
+    IMAGE_MAX_DIM = 1024
+
+    BACKBONE = "resnet50"
 
 
 class ToothDataset(utils.Dataset):
