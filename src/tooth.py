@@ -29,6 +29,8 @@ class ToothConfig(Config):
     # Number of classes (including background)
     NUM_CLASSES = 1 + 6  # background + 3 shapes
 
+    WEIGHT_DECAY = 0.001
+
 
 class ToothDataset(utils.Dataset):
     def load_data(self, dataset_dir, annotation_filename='_annotation_data.json', return_coco=False):
