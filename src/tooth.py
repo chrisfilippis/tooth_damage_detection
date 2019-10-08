@@ -285,11 +285,6 @@ def main():
                 layers='all',
                 augmentation=augmentation)
 
-    model.train(dataset_train, dataset_val,
-                learning_rate=config.LEARNING_RATE/100,
-                epochs=120,
-                layers='all',
-                augmentation=augmentation)
 
     print("Fine tune all layers")
 
