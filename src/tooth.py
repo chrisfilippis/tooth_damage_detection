@@ -280,7 +280,7 @@ def main():
 
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
-                epochs=16,
+                epochs=32,
                 layers='4+',
                 augmentation=augmentation)
 
