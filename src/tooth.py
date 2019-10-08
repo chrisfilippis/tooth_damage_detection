@@ -29,12 +29,15 @@ class ToothConfig(Config):
 
     # Number of classes (including background)
     NUM_CLASSES = 1 + 6  # background + 3 shapes
-    STEPS_PER_EPOCH = 150
+    STEPS_PER_EPOCH = 250
 
     IMAGE_RESIZE_MODE = "none"
 
     IMAGE_MIN_DIM = 768
     IMAGE_MAX_DIM = 1024
+
+    TRAIN_ROIS_PER_IMAGE = 512
+    VALIDATION_STEPS = 70
 
 
 class ToothDataset(utils.Dataset):
@@ -196,7 +199,6 @@ def main():
         MODEL_DIR = args.model_dir
 
     model_file = "mask_rcnn_coco.h5"
-    DEVICE = '/gpu:1'  # /gpu:1  /cpu:0 or /gpu:0
 
     training_data_dir = data_dir + 'output/training/'
     validation_data_dir = data_dir + 'output/validation/'
@@ -275,16 +277,15 @@ def main():
 
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
-                epochs=40,
-                layers = 'all',
+                epochs=8,
+                layers='heads',
                 augmentation=augmentation)
 
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE/10,
-                epochs=80,
+                epochs=20,
                 layers='all',
                 augmentation=augmentation)
-
 
     print("Fine tune all layers")
 
