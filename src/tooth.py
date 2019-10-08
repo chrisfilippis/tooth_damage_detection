@@ -28,7 +28,9 @@ class ToothConfig(Config):
 
     # Number of classes (including background)
     NUM_CLASSES = 1 + 6  # background + 3 shapes
-    STEPS_PER_EPOCH = 250
+    STEPS_PER_EPOCH = 150
+
+    IMAGE_RESIZE_MODE = "none"
 
     IMAGE_MIN_DIM = 768
     IMAGE_MAX_DIM = 1024
@@ -266,15 +268,15 @@ def main():
     # which layers to train by name pattern.
 
     model.train(dataset_train, dataset_val,
-                learning_rate=config.LEARNING_RATE,
+                learning_rate=config.LEARNING_RATE * 2,
                 epochs=12,
-                layers='heads',
-                augmentation=augmentation)
+                layers='heads')
 
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
                 epochs=2,
-                layers='all')
+                layers='all',
+                augmentation=augmentation)
 
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
