@@ -3,6 +3,7 @@ import random
 import numpy as np
 from pycocotools import mask as maskUtils
 import imgaug
+import imgaug.augmenters as iaa
 
 from mrcnn.config import Config
 from mrcnn import utils
@@ -260,7 +261,12 @@ def main():
 
     print("Train the head branches")
 
-    augmentation = imgaug.augmenters.Fliplr(0.5)
+    # augmentation = imgaug.augmenters.Fliplr(0.5)
+
+    augmentation = iaa.OneOf([
+        imgaug.augmenters.Fliplr(1.0),
+        imgaug.augmenters.Flipud(1.0)
+    ])
 
     # Train the head branches
     # Passing layers="heads" freezes all layers except the head
@@ -268,20 +274,21 @@ def main():
     # which layers to train by name pattern.
 
     model.train(dataset_train, dataset_val,
-                learning_rate=config.LEARNING_RATE * 2,
-                epochs=12,
-                layers='heads')
+                learning_rate=config.LEARNING_RATE,
+                epochs=40,
+                layers = 'all',
+                augmentation=augmentation)
 
     model.train(dataset_train, dataset_val,
-                learning_rate=config.LEARNING_RATE,
-                epochs=2,
+                learning_rate=config.LEARNING_RATE/10,
+                epochs=80,
                 layers='all',
                 augmentation=augmentation)
 
     model.train(dataset_train, dataset_val,
-                learning_rate=config.LEARNING_RATE,
-                epochs=32,
-                layers='4+',
+                learning_rate=config.LEARNING_RATE/100,
+                epochs=120,
+                layers='all',
                 augmentation=augmentation)
 
     print("Fine tune all layers")

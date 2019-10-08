@@ -23,8 +23,11 @@ RUN apt-get install -y libsm6 libxext6 libxrender-dev
 CMD python -c "import tensorflow as tf; tf.enable_eager_execution(); print(tf.reduce_sum(tf.random_normal([1000, 1000])))"
 # CMD python src/tooth.py --data_dir=/var/project/data/ --model_dir=/var/project/logs/ --init_with=coco > logs/output.txt
 
-# sudo docker build --tag=tooth_damage:latest .
-# sudo docker create --gpus all -v ~/project/tooth_damage_detection/logs/test_2:/var/project/logs tooth_damage:latest
+# sudo docker build --tag=cfil:latest .
+# sudo docker create --gpus all -v ~/project/logs:/var/project/logs cfil:latest
 
+# sudo docker run -it --gpus all -v ~/project/logs:/var/project/logs cfil:latest bash
+# sudo docker run -it --rm --gpus all -v ~/project/logs/test_3:/var/project/logs cfil:latest bash
 
-# sudo docker run -it --rm --gpus all -v ~/project/tooth_damage_detection/logs/test_2:/var/project/logs tooth_damage:latest bash
+# nohup python src/tooth.py --data_dir=/var/project/data/ --model_dir=/var/project/logs/test_1/ --init_with=coco > logs/test_1/output.txt &
+# sudo docker cp src/tooth.py 59d5384186d4:/var/project/src/tooth.py
