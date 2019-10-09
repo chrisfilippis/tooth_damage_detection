@@ -282,7 +282,7 @@ def main():
                 augmentation=augmentation)
 
     model.train(dataset_train, dataset_val,
-                learning_rate=config.LEARNING_RATE / 10,
+                learning_rate=config.LEARNING_RATE,
                 epochs=8,
                 layers='heads',
                 augmentation=augmentation)
