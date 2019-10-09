@@ -36,7 +36,7 @@ class ToothConfig(Config):
     IMAGE_MIN_DIM = 768
     IMAGE_MAX_DIM = 1024
 
-    # TRAIN_ROIS_PER_IMAGE = 512
+    TRAIN_ROIS_PER_IMAGE = 512
     VALIDATION_STEPS = 70
 
 
@@ -277,13 +277,7 @@ def main():
 
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
-                epochs=8,
-                layers='heads',
-                augmentation=augmentation)
-
-    model.train(dataset_train, dataset_val,
-                learning_rate=config.LEARNING_RATE,
-                epochs=8,
+                epochs=16,
                 layers='heads',
                 augmentation=augmentation)
 
