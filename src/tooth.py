@@ -282,9 +282,15 @@ def main():
                 augmentation=augmentation)
 
     model.train(dataset_train, dataset_val,
+                learning_rate=config.LEARNING_RATE / 10,
+                epochs=8,
+                layers='heads',
+                augmentation=augmentation)
+
+    model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE/10,
                 epochs=20,
-                layers='all',
+                layers='4+',
                 augmentation=augmentation)
 
     print("Fine tune all layers")
