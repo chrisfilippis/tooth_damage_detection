@@ -36,7 +36,7 @@ class ToothConfig(Config):
     IMAGE_MIN_DIM = 768
     IMAGE_MAX_DIM = 1024
 
-    TRAIN_ROIS_PER_IMAGE = 512
+    # TRAIN_ROIS_PER_IMAGE = 512
     VALIDATION_STEPS = 70
 
 
