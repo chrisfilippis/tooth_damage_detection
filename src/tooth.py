@@ -29,14 +29,50 @@ class ToothConfig(Config):
 
     # Number of classes (including background)
     NUM_CLASSES = 1 + 6  # background + 3 shapes
-    STEPS_PER_EPOCH = 250
+    STEPS_PER_EPOCH = 600
 
     IMAGE_MIN_DIM = 768
     IMAGE_MAX_DIM = 1024
 
-    TRAIN_ROIS_PER_IMAGE = 512
-    VALIDATION_STEPS = 70
+    TRAIN_ROIS_PER_IMAGE = 1024
     DETECTION_MIN_CONFIDENCE = 0.9
+
+
+def train(model, data_train, data_val, cfg):
+    # augmentation = imgaug.augmenters.Fliplr(0.5)
+
+    augmentation = iaa.OneOf([
+        imgaug.augmenters.Fliplr(1.0),
+        imgaug.augmenters.Flipud(1.0)
+    ])
+
+    # Train the head branches
+    # Passing layers="heads" freezes all layers except the head
+    # layers. You can also pass a regular expression to select
+    # which layers to train by name pattern.
+
+    model.train(data_train, data_val,
+                learning_rate=cfg.LEARNING_RATE,
+                epochs=160,
+                layers='heads',
+                augmentation=augmentation)
+
+    # model.train(dataset_train, dataset_val,
+    #             learning_rate=config.LEARNING_RATE,
+    #             epochs=5,
+    #             layers='heads',
+    #             augmentation=augmentation)
+    #
+    # model.train(dataset_train, dataset_val,
+    #             learning_rate=config.LEARNING_RATE/10,
+    #             epochs=20,
+    #             layers='4+')
+
+    # Save weights
+    # Typically not needed because callbacks save after every epoch
+    # Uncomment to save manually
+    # model_path = os.path.join(MODEL_DIR, "mask_rcnn_shapes.h5")
+    # model.keras_model.save_weights(model_path)
 
 
 class ToothDataset(utils.Dataset):
@@ -262,57 +298,9 @@ def main():
 
     print("Train the head branches")
 
-    # augmentation = imgaug.augmenters.Fliplr(0.5)
-
-    augmentation = iaa.OneOf([
-        imgaug.augmenters.Fliplr(1.0),
-        imgaug.augmenters.Flipud(1.0)
-    ])
-
-    # Train the head branches
-    # Passing layers="heads" freezes all layers except the head
-    # layers. You can also pass a regular expression to select
-    # which layers to train by name pattern.
-
-    model.train(dataset_train, dataset_val,
-                learning_rate=config.LEARNING_RATE,
-                epochs=160,
-                layers='heads',
-                augmentation=augmentation)
-
-    # model.train(dataset_train, dataset_val,
-    #             learning_rate=config.LEARNING_RATE,
-    #             epochs=5,
-    #             layers='heads',
-    #             augmentation=augmentation)
-    #
-    # model.train(dataset_train, dataset_val,
-    #             learning_rate=config.LEARNING_RATE/10,
-    #             epochs=20,
-    #             layers='4+')
-
+    train(model, dataset_train, dataset_val, config)
 
     print("Fine tune all layers")
-
-    # # Fine tune all layers
-    # # Passing layers="all" trains all layers. You can also
-    # # pass a regular expression to select which layers to
-    # # train by name pattern.
-    # model.train(dataset_train, dataset_val,
-    #             learning_rate=config.LEARNING_RATE / 10,
-    #             epochs=2,
-    #             layers="all")
-
-    # model.train(dataset_train, dataset_val,
-    #             learning_rate=config.LEARNING_RATE / 10,
-    #             epochs=60,
-    #             layers='4+')
-
-    # Save weights
-    # Typically not needed because callbacks save after every epoch
-    # Uncomment to save manually
-    # model_path = os.path.join(MODEL_DIR, "mask_rcnn_shapes.h5")
-    # model.keras_model.save_weights(model_path)
 
     class InferenceConfig(ToothConfig):
         GPU_COUNT = 1
