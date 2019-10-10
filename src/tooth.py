@@ -53,7 +53,7 @@ def train(model, data_train, data_val, cfg):
 
     model.train(data_train, data_val,
                 learning_rate=cfg.LEARNING_RATE,
-                epochs=160,
+                epochs=8,
                 layers='heads',
                 augmentation=augmentation)
 
