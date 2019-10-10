@@ -6,6 +6,7 @@ import imgaug
 import imgaug.augmenters as iaa
 
 from mrcnn.config import Config
+import keras
 from mrcnn import utils
 import mrcnn.model as modellib
 from mrcnn import visualize
@@ -36,6 +37,7 @@ class ToothConfig(Config):
 
     TRAIN_ROIS_PER_IMAGE = 512
     DETECTION_MIN_CONFIDENCE = 0.9
+    WEIGHT_DECAY = 0.0001
 
 
 def train(model, data_train, data_val, cfg):
@@ -50,6 +52,8 @@ def train(model, data_train, data_val, cfg):
     # Passing layers="heads" freezes all layers except the head
     # layers. You can also pass a regular expression to select
     # which layers to train by name pattern.
+
+    # es_callback = keras.callbacks.EarlyStopping(monitor='val_loss', mode='min', verbose=1)
 
     model.train(data_train, data_val,
                 learning_rate=cfg.LEARNING_RATE,
