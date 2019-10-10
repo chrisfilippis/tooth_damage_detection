@@ -277,15 +277,14 @@ def main():
 
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
-                epochs=16,
+                epochs=5,
                 layers='heads',
                 augmentation=augmentation)
 
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE/10,
                 epochs=20,
-                layers='4+',
-                augmentation=augmentation)
+                layers='4+')
 
     print("Fine tune all layers")
 

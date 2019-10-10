@@ -24,12 +24,23 @@ matplotlib.use('tkagg')
 
 # Directory to save logs and trained model
 
-data_dir = 'C:\\Projects\\tooth_damage_detection\\data\\'
-model_file = "mask_rcnn_coco.h5"
+data_dir = 'C:/Projects/tooth_damage_detection/data/'
 
-MODEL_DIR = os.path.join(data_dir, "logs")
-training_data_dir = data_dir + 'output\\training\\'
-unknown_data_dir = data_dir + 'output\\unknown\\'
+training_data_dir = data_dir + 'output/training/'
+validation_data_dir = data_dir + 'output/validation/'
+unknown_data_dir = data_dir + 'output/unknown/'
+
+annotation_file = '_annotation_data.json'
+
+force_load = False
+process_data(data_dir + 'annotator/training/', training_data_dir, annotation_file, force_load=force_load)
+process_data(data_dir + 'annotator/validation/', validation_data_dir, annotation_file, force_load=force_load)
+process_data(data_dir + 'annotator/unknown/', unknown_data_dir, annotation_file, force_load=force_load)
+
+MODEL_DIR = "C:/Users/filippisc/Desktop/master/tests//"
+
+training_data_dir = data_dir + 'output/training'
+unknown_data_dir = data_dir + 'output/unknown'
 
 annotation_file = '_annotation_data.json'
 
@@ -53,13 +64,9 @@ print(dataset_train.class_from_source_map)
 
 inference_config = ToothConfig()
 
-DEVICE = "/gpu:1"  # /cpu:0 or /gpu:0
-
-with tf.device(DEVICE):
-    # Recreate the model in inference mode
-    model = modellib.MaskRCNN(mode="inference",
-                              config=inference_config,
-                              model_dir=MODEL_DIR)
+model = modellib.MaskRCNN(mode="inference",
+                          config=inference_config,
+                          model_dir=MODEL_DIR)
 
 # Get path to saved weights
 # Either set a specific path or find last trained weights
@@ -72,7 +79,7 @@ model.load_weights(model_path, by_name=True)
 
 # Test on a random image
 print(dataset_unknown.image_ids)
-img_id = dataset_unknown.image_ids[1]
+img_id = dataset_unknown.image_ids[2]
 
 print("img_id ", img_id)
 

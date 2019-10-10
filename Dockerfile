@@ -29,5 +29,5 @@ CMD python -c "import tensorflow as tf; tf.enable_eager_execution(); print(tf.re
 # sudo docker run -it --gpus all -v ~/project/logs:/var/project/logs cfil:latest bash
 # sudo docker run -it --rm --gpus all -v ~/project/logs/test_3:/var/project/logs cfil:latest bash
 
-# nohup python src/tooth.py --data_dir=/var/project/data/ --model_dir=/var/project/logs/test_1/ --init_with=coco > logs/test_1/output.txt &
+# nohup python src/tooth.py --data_dir=/var/project/data/ --model_dir=/var/project/logs/heads_8-all_20/ --init_with=coco >output.txt &
 # sudo docker cp src/tooth.py 59d5384186d4:/var/project/src/tooth.py
