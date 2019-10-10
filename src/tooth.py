@@ -31,13 +31,12 @@ class ToothConfig(Config):
     NUM_CLASSES = 1 + 6  # background + 3 shapes
     STEPS_PER_EPOCH = 250
 
-    IMAGE_RESIZE_MODE = "none"
-
     IMAGE_MIN_DIM = 768
     IMAGE_MAX_DIM = 1024
 
-    TRAIN_ROIS_PER_IMAGE = 512
+    TRAIN_ROIS_PER_IMAGE = 1024
     VALIDATION_STEPS = 70
+    DETECTION_MIN_CONFIDENCE = 0.9
 
 
 class ToothDataset(utils.Dataset):
@@ -277,14 +276,21 @@ def main():
 
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
-                epochs=5,
+                epochs=160,
                 layers='heads',
                 augmentation=augmentation)
 
-    model.train(dataset_train, dataset_val,
-                learning_rate=config.LEARNING_RATE/10,
-                epochs=20,
-                layers='4+')
+    # model.train(dataset_train, dataset_val,
+    #             learning_rate=config.LEARNING_RATE,
+    #             epochs=5,
+    #             layers='heads',
+    #             augmentation=augmentation)
+    #
+    # model.train(dataset_train, dataset_val,
+    #             learning_rate=config.LEARNING_RATE/10,
+    #             epochs=20,
+    #             layers='4+')
+
 
     print("Fine tune all layers")
 
