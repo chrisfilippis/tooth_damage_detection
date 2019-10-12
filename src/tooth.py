@@ -38,7 +38,7 @@ class ToothConfig(Config):
     # IMAGE_RESIZE_MODE = "none"
 
     # TRAIN_ROIS_PER_IMAGE = 512
-    WEIGHT_DECAY = 0.001
+    WEIGHT_DECAY = 0.0005
 
 
 def train(model, data_train, data_val, cfg):
