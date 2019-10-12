@@ -58,7 +58,7 @@ def train(model, data_train, data_val, cfg):
 
     model.train(data_train, data_val,
                 learning_rate=cfg.LEARNING_RATE,
-                epochs=3,
+                epochs=6,
                 layers='heads',
                 augmentation=augmentation)
 
@@ -372,7 +372,7 @@ def main():
 
     print("Fine tune all layers")
 
-
+    measure_accuracy(MODEL_DIR, dataset_train, dataset_val)
 
 
 if __name__ == '__main__':
