@@ -37,7 +37,7 @@ class ToothConfig(Config):
     IMAGE_MAX_DIM = 1024
     IMAGE_RESIZE_MODE = "none"
 
-    TRAIN_ROIS_PER_IMAGE = 512
+    # TRAIN_ROIS_PER_IMAGE = 512
     WEIGHT_DECAY = 0.0005
 
 
