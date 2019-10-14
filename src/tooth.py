@@ -31,7 +31,7 @@ class ToothConfig(Config):
     # Number of classes (including background)
     NUM_CLASSES = 1 + 6  # background + 3 shapes
     STEPS_PER_EPOCH = 550
-    RPN_ANCHOR_SCALES = (16, 32, 64, 128, 256)  # anchor side in pixels
+    RPN_ANCHOR_SCALES = (16, 32, 64, 128)  # anchor side in pixels
 
     IMAGE_MIN_DIM = 768
     IMAGE_MAX_DIM = 1024
