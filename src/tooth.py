@@ -31,7 +31,7 @@ class ToothConfig(Config):
     # Number of classes (including background)
     NUM_CLASSES = 1 + 6  # background + 3 shapes
     STEPS_PER_EPOCH = 550
-    RPN_ANCHOR_SCALES = (16, 32, 64, 128)  # anchor side in pixels
+    RPN_ANCHOR_SCALES = (16, 32, 64, 128, 256)  # anchor side in pixels
 
     IMAGE_MIN_DIM = 768
     IMAGE_MAX_DIM = 1024
@@ -59,21 +59,21 @@ def train(model, data_train, data_val, cfg):
 
     model.train(data_train, data_val,
                 learning_rate=cfg.LEARNING_RATE,
-                epochs=6,
+                epochs=40,
                 layers='heads',
                 augmentation=augmentation)
 
-    model.train(data_train, data_val,
-                learning_rate=cfg.LEARNING_RATE/10,
-                epochs=40,
-                layers='4+',
-                augmentation=augmentation)
-
-    model.train(data_train, data_val,
-                learning_rate=cfg.LEARNING_RATE/10,
-                epochs=60,
-                layers='all',
-                augmentation=augmentation)
+    # model.train(data_train, data_val,
+    #             learning_rate=cfg.LEARNING_RATE/10,
+    #             epochs=40,
+    #             layers='4+',
+    #             augmentation=augmentation)
+    #
+    # model.train(data_train, data_val,
+    #             learning_rate=cfg.LEARNING_RATE/10,
+    #             epochs=60,
+    #             layers='all',
+    #             augmentation=augmentation)
 
     # Save weights
     # Typically not needed because callbacks save after every epoch
