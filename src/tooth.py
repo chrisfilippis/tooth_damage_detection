@@ -359,6 +359,7 @@ def main():
         # Load weights trained on MS COCO, but skip layers that
         # are different due to the different number of classes
         # See README for instructions to download the COCO weights
+        print(COCO_MODEL_PATH)
         model.load_weights(COCO_MODEL_PATH, by_name=True,
                            exclude=["mrcnn_class_logits", "mrcnn_bbox_fc",
                                     "mrcnn_bbox", "mrcnn_mask"])
