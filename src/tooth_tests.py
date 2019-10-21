@@ -31,7 +31,7 @@ unknown_data_dir = data_dir + 'output/unknown/'
 
 annotation_file = '_annotation_data.json'
 
-MODEL_DIR = "C:/Users/filippisc/Desktop/master/tests//heads_20_decay00005_anchors_2//"
+MODEL_DIR = "C:/Users/filippisc/Desktop/master/tests//heads_40_decay00001_150_epochs//"
 
 
 print("Loading training dataset")
