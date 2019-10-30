@@ -60,7 +60,19 @@ def train(model, data_train, data_val, cfg):
 
     model.train(data_train, data_val,
                 learning_rate=cfg.LEARNING_RATE,
-                epochs=40,
+                epochs=60,
+                layers='heads',
+                augmentation=augmentation)
+
+    model.train(data_train, data_val,
+                learning_rate=cfg.LEARNING_RATE,
+                epochs=110,
+                layers='all',
+                augmentation=augmentation)
+
+    model.train(data_train, data_val,
+                learning_rate=cfg.LEARNING_RATE/10,
+                epochs=130,
                 layers='all',
                 augmentation=augmentation)
 
