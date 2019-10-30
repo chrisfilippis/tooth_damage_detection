@@ -26,17 +26,17 @@ class ToothConfig(Config):
 
     # Train on 1 GPU and 8 images per GPU. We can put multiple images on each
     # GPU because the images are small. Batch size is 8 (GPUs * images/GPU).
-    IMAGES_PER_GPU = 4
+    IMAGES_PER_GPU = 2
 
     # Number of classes (including background)
     NUM_CLASSES = 1 + 6  # background + 3 shapes
-    STEPS_PER_EPOCH = 12
+    STEPS_PER_EPOCH = 36
     RPN_ANCHOR_SCALES = (32, 64, 128, 256)  # anchor side in pixels
 
     IMAGE_MIN_DIM = 768
     IMAGE_MAX_DIM = 1024
 
-    VALIDATION_STEPS = 3
+    VALIDATION_STEPS = 6
     # IMAGE_RESIZE_MODE = "none"
 
     # TRAIN_ROIS_PER_IMAGE = 512
