@@ -32,16 +32,15 @@ class ToothConfig(Config):
     NUM_CLASSES = 1 + 6  # background + 3 shapes
     STEPS_PER_EPOCH = 36
     RPN_ANCHOR_SCALES = (32, 64, 128, 256)  # anchor side in pixels
-
+    
     IMAGE_MIN_DIM = 768
     IMAGE_MAX_DIM = 1024
-
+    
     VALIDATION_STEPS = 6
-    # IMAGE_RESIZE_MODE = "none"
-
+    IMAGE_RESIZE_MODE = "none"
+    
     # TRAIN_ROIS_PER_IMAGE = 512
     # WEIGHT_DECAY = 0.0001
-
 
 def train(model, data_train, data_val, cfg):
     # augmentation = imgaug.augmenters.Fliplr(0.5)
@@ -75,18 +74,6 @@ def train(model, data_train, data_val, cfg):
                 epochs=130,
                 layers='all',
                 augmentation=augmentation)
-
-    # model.train(data_train, data_val,
-    #             learning_rate=cfg.LEARNING_RATE/10,
-    #             epochs=40,
-    #             layers='4+',
-    #             augmentation=augmentation)
-    #
-    # model.train(data_train, data_val,
-    #             learning_rate=cfg.LEARNING_RATE/10,
-    #             epochs=60,
-    #             layers='all',
-    #             augmentation=augmentation)
 
     # Save weights
     # Typically not needed because callbacks save after every epoch
