@@ -4,9 +4,9 @@ set -e
 
 git pull
 
-docker stop cfil_models
+docker stop tooth_maskrcnn
 
-docker rm cfil_models
+docker rm tooth_maskrcnn
 
 docker build --tag=tooth_maskrcnn:latest .
 
