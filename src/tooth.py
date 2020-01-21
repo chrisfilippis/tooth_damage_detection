@@ -289,6 +289,24 @@ def measure_accuracy(MODEL_DIRECTORY, data_train, dat_val):
     print("mAP: ", np.mean(APs))
 
 
+def find_colors(class_ids):
+    colors = {
+
+        "cat_1": (0, 0.5, 0),
+        "cat_2": (0, 1, 1),
+        "cat_3": (1, 0, 1),
+        "cat_4": (0, 0, 1),
+        "cat_5": (1, 0, 0),
+        "cat_6": (0, 0, 0)
+    }
+
+    final_colors = list()
+    for classs in class_ids:
+        final_colors.append(colors['cat_' + str(classs)])
+
+    return final_colors
+
+
 def main():
     # Directory to save logs and trained model
 
