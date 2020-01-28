@@ -17,6 +17,7 @@ from skimage.segmentation import slic
 from skimage.segmentation import mark_boundaries
 from skimage.util import img_as_float
 from skimage import io
+from customize import create_superpixels, combine_masks_and_superpixels, transform_masks_to_superpixel
 
 
 class ToothConfig(Config):
@@ -45,6 +46,7 @@ class ToothConfig(Config):
     
     # TRAIN_ROIS_PER_IMAGE = 512
     # WEIGHT_DECAY = 0.0001
+
 
 def train(model, data_train, data_val, cfg):
     # augmentation = imgaug.augmenters.Fliplr(0.5)
@@ -216,6 +218,40 @@ class ToothDataset(utils.Dataset):
         return m
 
 
+def visualize_colored_instances(model, class_names, img, results):
+    colors = {
+        "cat_1": (0, 0.5, 0),
+        "cat_2": (0, 1, 1),
+        "cat_3": (1, 0, 1),
+        "cat_4": (0, 0, 1),
+        "cat_5": (1, 0, 0),
+        "cat_6": (0, 0, 0)
+    }
+
+    final_colors = find_colors(r['class_ids'])
+
+    visualize.display_instances(img, results['rois'], results['masks'], results['class_ids'],
+                                class_names, results['scores'], figsize=(8, 8))
+
+
+def find_colors(class_ids):
+    colors = {
+
+        "cat_1": (0, 0.5, 0),
+        "cat_2": (0, 1, 1),
+        "cat_3": (1, 0, 1),
+        "cat_4": (0, 0, 1),
+        "cat_5": (1, 0, 0),
+        "cat_6": (0, 0, 0)
+    }
+
+    final_colors = list()
+    for classs in class_ids:
+        final_colors.append(colors['cat_' + str(classs)])
+
+    return final_colors
+
+
 def measure_accuracy(MODEL_DIRECTORY, data_train, dat_val):
     class InferenceConfig(ToothConfig):
         GPU_COUNT = 1
@@ -253,12 +289,33 @@ def measure_accuracy(MODEL_DIRECTORY, data_train, dat_val):
     visualize.display_instances(original_image, gt_bbox, gt_mask, gt_class_id,
                                 data_train.class_names, figsize=(8, 8))
 
-    results = model.detect([original_image], verbose=1)
+    colors = {
+        "cat_1": (0, 0.5, 0),
+        "cat_2": (0, 1, 1),
+        "cat_3": (1, 0, 1),
+        "cat_4": (0, 0, 1),
+        "cat_5": (1, 0, 0),
+        "cat_6": (0, 0, 0)
+    }
 
+    results = model.detect([original_image], verbose=1)
     r = results[0]
+
+    final_colors = list()
+    for classs in r['class_ids']:
+        final_colors.append(colors['cat_' + str(classs)])
 
     visualize.display_instances(original_image, r['rois'], r['masks'], r['class_ids'],
                                 data_train.class_names, r['scores'], figsize=(8, 8))
+
+    msks, cls_ids, bboxes = transform_masks_to_superpixel(results, original_image, data_train.class_names)
+
+    final_colors = list()
+    for classs in cls_ids:
+        final_colors.append(colors['cat_' + str(classs)])
+
+    visualize.display_instances(image=original_image, masks=np.array(msks), boxes=np.array(bboxes), class_ids=np.array(cls_ids),
+                            class_names=dataset_val.class_names, figsize=(8, 8), colors=final_colors)
 
     log('rois', r['rois'])
     log('masks', r['masks'][0][0])
@@ -286,57 +343,6 @@ def measure_accuracy(MODEL_DIRECTORY, data_train, dat_val):
         APs.append(AP)
 
     print("mAP: ", np.mean(APs))
-
-
-def create_superpixels(image, image_file="C:\\Projects\\tooth_damage_detection_deeplab\\data\\annotator\\training\\anaxristina37.jpg"):
-    
-    # load the image and convert it to a floating point data type
-    image = image or img_as_float(io.imread(image_file))
-    # apply SLIC and extract (approximately) the supplied number
-    # of segments
-    return slic(image, n_segments = 900, max_iter=9, sigma = .15)
-
-    # import matplotlib
-    # matplotlib.use('tkagg')
-    # import matplotlib.pyplot as plt
-
-    # # loop over the number of segments
-    # for numSegments in (900, 500):
-        
-    #     segments = slic(image, n_segments = numSegments, max_iter=9, sigma = .15)
-    #     print(segments.shape)
-    #     exit()
-    
-    #     # show the output of SLIC
-    #     fig = plt.figure("Superpixels -- %d segments" % (numSegments))
-    #     ax = fig.add_subplot(1, 1, 1)
-    #     ax.imshow(mark_boundaries(image, segments))
-    #     plt.axis("off")
-    
-    # # show the plots
-    # plt.show()
-
-
-def combine_masks_and_superpixels(masks, superpixels):
-    print(superpixels)
-
-
-def find_colors(class_ids):
-    colors = {
-
-        "cat_1": (0, 0.5, 0),
-        "cat_2": (0, 1, 1),
-        "cat_3": (1, 0, 1),
-        "cat_4": (0, 0, 1),
-        "cat_5": (1, 0, 0),
-        "cat_6": (0, 0, 0)
-    }
-
-    final_colors = list()
-    for classs in class_ids:
-        final_colors.append(colors['cat_' + str(classs)])
-
-    return final_colors
 
 
 def main():

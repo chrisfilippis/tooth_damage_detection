@@ -11,11 +11,12 @@ from skimage.util import img_as_float
 from skimage import io
 from operator import itemgetter 
 from itertools import groupby
+from mrcnn import visualize
 
 
 def create_superpixels(image=None, image_file="C:\\Projects\\tooth_damage_detection_deeplab\\data\\annotator\\training\\anaxristina37.jpg"):
     
-    if(not image.any()):
+    if (image is None):
         # load the image and convert it to a floating point data type
         image = img_as_float(io.imread(image_file))
     
@@ -23,21 +24,21 @@ def create_superpixels(image=None, image_file="C:\\Projects\\tooth_damage_detect
     # of segments
     #return slic(image, n_segments = 9, max_iter=9, sigma = .15)#.astype(np.uint8)
 
-    import matplotlib
-    matplotlib.use('tkagg')
-    import matplotlib.pyplot as plt
+    # import matplotlib
+    # matplotlib.use('tkagg')
+    # import matplotlib.pyplot as plt
 
-    segments = slic(image, n_segments = 300, max_iter=9, sigma = 0.2)#.astype(np.uint8)
+    return slic(image, n_segments = 300, max_iter=9, sigma = 0.2)#.astype(np.uint8)
             
-    # show the output of SLIC
-    fig = plt.figure("Superpixels -- %d segments" % (9))
-    ax = fig.add_subplot(1, 1, 1)
-    ax.imshow(mark_boundaries(image, segments))
-    plt.axis("off")
+    # # show the output of SLIC
+    # fig = plt.figure("Superpixels -- %d segments" % (9))
+    # ax = fig.add_subplot(1, 1, 1)
+    # ax.imshow(mark_boundaries(image, segments))
+    # plt.axis("off")
 
-    # show the plots
-    plt.show()
-    return segments
+    # # show the plots
+    # plt.show()
+    # return segments
 
 
 def get_bbox(img):
@@ -187,3 +188,14 @@ def get_superpixel_class_weight(superpixel, mask, class_id, mask_index):
         result.append(line_result)
 
     return np.sum(result)
+
+
+def transform_masks_to_superpixel(results, original_image, class_names, show_image=False):
+    r = results[0]
+
+    # if(show_image == True):
+    #     visualize.display_instances(original_image, r['rois'], r['masks'], r['class_ids'],
+    #                             class_names, r['scores'], figsize=(8, 8))
+    
+    superpixels = create_superpixels(image=original_image)
+    return combine_masks_and_superpixels(r['masks'], r['class_ids'], superpixels)
