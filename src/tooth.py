@@ -13,6 +13,10 @@ from mrcnn import visualize
 from mrcnn.model import log
 from pycocotools.coco import COCO
 from preprocess_coco import process_data
+from skimage.segmentation import slic
+from skimage.segmentation import mark_boundaries
+from skimage.util import img_as_float
+from skimage import io
 
 
 class ToothConfig(Config):
@@ -245,14 +249,22 @@ def measure_accuracy(MODEL_DIRECTORY, data_train, dat_val):
     log("gt_bbox", gt_bbox)
     log("gt_mask", gt_mask)
 
+    
     visualize.display_instances(original_image, gt_bbox, gt_mask, gt_class_id,
                                 data_train.class_names, figsize=(8, 8))
 
     results = model.detect([original_image], verbose=1)
 
     r = results[0]
+
     visualize.display_instances(original_image, r['rois'], r['masks'], r['class_ids'],
                                 data_train.class_names, r['scores'], figsize=(8, 8))
+
+    log('rois', r['rois'])
+    log('masks', r['masks'][0][0])
+    log('class_ids', r['class_ids'])
+    log('scores', r['scores'])
+    exit()
 
     # Compute VOC-Style mAP @ IoU=0.5
     # Running on 10 images. Increase for better accuracy.
@@ -276,6 +288,39 @@ def measure_accuracy(MODEL_DIRECTORY, data_train, dat_val):
     print("mAP: ", np.mean(APs))
 
 
+def create_superpixels(image, image_file="C:\\Projects\\tooth_damage_detection_deeplab\\data\\annotator\\training\\anaxristina37.jpg"):
+    
+    # load the image and convert it to a floating point data type
+    image = image or img_as_float(io.imread(image_file))
+    # apply SLIC and extract (approximately) the supplied number
+    # of segments
+    return slic(image, n_segments = 900, max_iter=9, sigma = .15)
+
+    # import matplotlib
+    # matplotlib.use('tkagg')
+    # import matplotlib.pyplot as plt
+
+    # # loop over the number of segments
+    # for numSegments in (900, 500):
+        
+    #     segments = slic(image, n_segments = numSegments, max_iter=9, sigma = .15)
+    #     print(segments.shape)
+    #     exit()
+    
+    #     # show the output of SLIC
+    #     fig = plt.figure("Superpixels -- %d segments" % (numSegments))
+    #     ax = fig.add_subplot(1, 1, 1)
+    #     ax.imshow(mark_boundaries(image, segments))
+    #     plt.axis("off")
+    
+    # # show the plots
+    # plt.show()
+
+
+def combine_masks_and_superpixels(masks, superpixels):
+    print(superpixels)
+
+
 def find_colors(class_ids):
     colors = {
 
@@ -295,6 +340,18 @@ def find_colors(class_ids):
 
 
 def main():
+
+    dataset_train = ToothDataset()
+    dataset_train.load_data("C:\\Projects\\tooth_damage_detection\data\\output\\training\\")
+    dataset_train.prepare()
+
+    dataset_val = ToothDataset()
+    dataset_val.load_data("C:\\Projects\\tooth_damage_detection\data\\output\\validation\\")
+    dataset_val.prepare()
+
+    measure_accuracy("C:\\Users\\filippisc\Desktop\master\\new_tests\\results\\test_1", dataset_train, dataset_val)
+    exit()
+
     # Directory to save logs and trained model
 
     import argparse

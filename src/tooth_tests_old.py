@@ -97,12 +97,12 @@ original_image, image_meta, gt_class_id, gt_bbox, gt_mask =\
     modellib.load_image_gt(dataset_unknown, inference_config,
                            image_id, use_mini_mask=False)
 
-# log("original_image", original_image)
-# log("image_meta", image_meta)
-# log("gt_class_id", gt_class_id)
-# log("gt_bbox", gt_bbox)
-# log("gt_mask", gt_mask)
-# print("image_id: ", image_id)
+log("original_image", original_image)
+log("image_meta", image_meta)
+log("gt_class_id", gt_class_id)
+log("gt_bbox", gt_bbox)
+log("gt_mask", gt_mask)
+print("image_id: ", image_id)
 
 def get_colors(N, bright=True):
     """
@@ -131,7 +131,7 @@ def create_superpixels(image=None, image_file="C:\\Projects\\tooth_damage_detect
     matplotlib.use('tkagg')
     import matplotlib.pyplot as plt
 
-    segments = slic(image, n_segments = 100, max_iter=9, sigma = .15)#.astype(np.uint8)
+    segments = slic(image, n_segments = 900, max_iter=9, sigma = .15)#.astype(np.uint8)
             
     # show the output of SLIC
     fig = plt.figure("Superpixels -- %d segments" % (9))
@@ -233,10 +233,6 @@ def display_instances(image, boxes, masks, class_ids, class_names,
     if auto_show:
         plt.show()
 
-def get_bbox(img):
-    a = np.where(img != 0)
-    return np.array([np.min(a[0]), np.max(a[0]), np.min(a[1]), np.max(a[1])])
-
 
 def combine_masks_and_superpixels(masks, class_ids, superpixels):
     n_superpixels = superpixels[-1, -1]
@@ -244,59 +240,39 @@ def combine_masks_and_superpixels(masks, class_ids, superpixels):
     print('Superpixels', superpixels.shape)
     
     print('Number of masks', masks.shape[2])
-    # print('Number of masksssss', masks)
     print('Masks', masks.shape)
-
-    # print(masks[0])
-    # print('Number of masks', masks)
-    # print('Number of masks', masks[0][0])
-
+    
+    result = []
     result_class = []
-    result_bbox = []
-    # loop superpixels verticaly
+    number_of = 0
+    
     for i in range(n_superpixels):
         superpixel = superpixels == i
-        # ind = np.where(superpixel == True)
-        # print('Superpixel: ' + str(i) + ' / ' + str(n_superpixels), '(' + str(np.amax(ind[0])) + ',' + str(np.amax(ind[1])) + ')')
+        # print(superpixels[np.where(superpixels == i)])
+        # exit()
+        print('Superpixel: ' + str(i) + ' / ' + str(n_superpixels), superpixel)
         # print('Superpixel volume: ', get_superpixel_volume(superpixel, superpixels, i))
-        # print('Superpixel shape: ', superpixel.shape)
+        print('Superpixel shape: ', superpixel.shape)
 
         superpixel_classes = get_superpixel_classes(superpixel, masks, class_ids)
+
+        print('Superpixel classes found', superpixel_classes)
 
         if(len(superpixel_classes) > 0):
             final_class = decide_class(superpixel_classes)
 
-            print('Superpixel classes found', superpixel_classes)
             print('Superpixel: ' + str(i) + ' / ' + str(n_superpixels) + ' class seleted', final_class)
+            exit()
 
-            print('superpixel.shape', superpixel.shape)
-            print('Superpixel shape: ', superpixel.shape)
-            
+            result.append(superpixel)
+            result.append(superpixel)
             result_class.append(final_class[0])
-            bbox = get_bbox(superpixel)
-            result_bbox.append(bbox)
-        else:
-            result_class.append(100)
+            number_of = number_of + 1
     
-    result_class = np.array(result_class)
-    classes = np.unique(result_class[result_class != 100])
-    result_masks = np.zeros((superpixels.shape[0], superpixels.shape[1], classes.shape[0]))
-
-    print('result_class', result_class)
-
-    # loop superpixels verticaly
-    for i in range(n_superpixels):
-        superpixel_class = result_class[i]
-        superpixel = superpixels == i
+    print(masks)
+    print(type(masks))
     
-        rec_class = classes == superpixel_class
-        rec_class = rec_class.astype(np.uint8)
-
-        result_masks[superpixel] = rec_class
-    
-    print('result_masks.shape', result_masks.shape)
-    
-    return result_masks, classes, np.array(result_bbox) #[num_instance, (y1, x1, y2, x2, class_id)]
+    return result, result_class, number_of
 
 
 def decide_class(superpixel_classes):
@@ -319,14 +295,12 @@ def get_superpixel_volume(superpixel, superpixels, indx=0):
         # print(str(x), str(np.unique(superpixel[:,x])) + ' / ' + str(np.unique(superpixels[:,x])))
 
         # if(len(np.unique(superpixel[x])) > 1):
-            # print(np.where(superpixel[x] == True))
-            # print(np.unique(superpixel[x]))
+        #     print(np.where(superpixel[x] == True))
+        #     print(np.unique(superpixel[x]))
 
         for y in range(superpixel.shape[1]):
             if(superpixel[x][y] == True):
-                
                 # print(str(indx) + ': ' + str(x) + '/' + str(y), superpixel[x][y])
-                
                 if(y > max_y):
                     max_y = y
                 if(x > max_x):
@@ -344,6 +318,7 @@ def get_superpixel_volume(superpixel, superpixels, indx=0):
     return superpixel_volume, max_x, max_y, min_x, min_y
 
 
+
 def get_superpixel_classes(superpixel, masks, class_ids):
 
     result = []
@@ -351,7 +326,7 @@ def get_superpixel_classes(superpixel, masks, class_ids):
     for mask_index in range(masks.shape[2]):
         
         class_id = class_ids[mask_index]
-        # print('Searhing for mask with index: ' + str(mask_index) + ' with class: ' + str(class_id))
+        print('Searhing for mask with index: ' + str(mask_index) + ' with class: ' + str(class_id))
         mask = masks[:, :, mask_index]
 
         superpixel_values = get_superpixel_class_weight(superpixel, mask, class_id, mask_index)
@@ -376,17 +351,21 @@ def get_superpixel_class_weight(superpixel, mask, class_id, mask_index):
     mask_temp[mask_temp == True] = 1
     mask_temp[mask_temp == False] = 2
 
+    # superpixel_temp = np.array([[1 if x == True else 0 for x in y] for y in superpixel])
+    # mask_temp = np.array([[1 if x == True else 2 for x in y] for y in mask])
+
     result = []
     for p_x in range(superpixel_temp.shape[0]):
 
         temp_reult = superpixel_temp[p_x] == mask_temp[p_x]
         line_result = temp_reult[np.where(temp_reult == True)].shape[0]
         
-        # if (line_result > 0):
-        #     print('Searhing in line with index (' + str(p_x) + '): ', superpixel_temp[p_x])
-        #     print('For in mask: ', mask_temp[p_x])
-        #     print('Result Indices: ', np.where(temp_reult == True))
-        #     print('Result: ', temp_reult[np.where(temp_reult == True)])
+        if (line_result > 0):
+
+            print('Searhing in line with index (' + str(p_x) + '): ', superpixel_temp[p_x])
+            print('For in mask: ', mask_temp[p_x])
+            print('Result Indices: ', np.where(temp_reult == True))
+            print('Result: ', temp_reult[np.where(temp_reult == True)])
 
         result.append(line_result)
 
@@ -417,9 +396,9 @@ for classs in r['class_ids']:
 # display_instances(image=original_image, masks=r["masks"], boxes=r['rois'], class_ids=r["class_ids"],
 #                             class_names=dataset_val.class_names, figsize=(8, 8), colors=final_colors)
 
-msks, cls_ids, bboxes = combine_masks_and_superpixels(r['masks'].astype(np.uint8), r['class_ids'].astype(np.uint8), create_superpixels(image=original_image))
+msks, cls_ids = combine_masks_and_superpixels(r['masks'].astype(np.uint8), r['class_ids'].astype(np.uint8), create_superpixels(image=original_image))
 
-display_instances(image=original_image, masks=np.array(msks), boxes=np.array(bboxes), class_ids=np.array(cls_ids),
+display_instances(image=original_image, masks=np.array(msks), boxes=r['rois'], class_ids=np.array(cls_ids),
                             class_names=dataset_val.class_names, figsize=(8, 8), colors=final_colors)
 
 # Compute VOC-Style mAP @ IoU=0.5
