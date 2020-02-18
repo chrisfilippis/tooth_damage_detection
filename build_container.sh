@@ -4,8 +4,8 @@ set -e
 git pull
 
 set +e
-docker stop tooth_maskrcnn
-docker rm tooth_maskrcnn
+docker container stop tooth_maskrcnn
+docker container rm tooth_maskrcnn
 docker build --tag=tooth_maskrcnn:latest .
 
 set -e
