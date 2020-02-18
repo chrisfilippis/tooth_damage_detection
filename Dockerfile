@@ -29,4 +29,7 @@ CMD python -c "import tensorflow as tf; tf.enable_eager_execution(); print(tf.re
 
 # nohup python src/tooth.py --data_dir=/var/project/data/ --model_dir=/var/project/logs/heads_8/ --init_with=coco > output.txt &
 # nohup python /var/project/src/tooth.py --data_dir=/var/project/data/ --model_dir=/var/project/logs/test_1/ --init_with=coco > /var/project/output.txt &
+
+# nohup python /var/project/src/tooth.py --model_dir=/var/project/logs/test_1/ --init_with=coco > /var/project/output.txt &
+
 # sudo docker cp src/tooth.py cfapp:/var/project/src/tooth.py

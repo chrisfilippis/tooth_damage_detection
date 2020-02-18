@@ -367,17 +367,17 @@ def main():
         description='Train custom Mask R-CNN on MS COCO.')
 
     # parser.add_argument('--data_dir', required=False, help="Path to load data (it should has training, unkown, validation)")
-    parser.add_argument('--model_file', required=False, help="Path to initial .h5 file")
-    parser.add_argument('--model_dir', required=False, help="Path to weights .h5 file or 'coco'")
+    parser.add_argument('--model_file', required=False, default="mask_rcnn_coco.h5", help="Path to initial .h5 file")
     parser.add_argument('--init_with', required=False, default="coco", help="imagenet, coco, or last")
+    parser.add_argument('--model_dir', required=False, help="Path to weights .h5 file or 'coco'")
     
-    parser.add_argument('--input_training_data', required=False, help="input training data folder")
-    parser.add_argument('--input_validation_data', required=False, help="input validation data folder")
-    parser.add_argument('--input_unknown_data', required=False, help="input unknown data folder")
+    parser.add_argument('--input_training_data', default="/var/project/data/annotator/training/", required=False, help="input training data folder")
+    parser.add_argument('--input_validation_data', default="/var/project/data/annotator/validation/",required=False, help="input validation data folder")
+    parser.add_argument('--input_unknown_data', default="/var/project/data/annotator/unknown/", required=False, help="input unknown data folder")
 
-    parser.add_argument('--training_data', required=False, help="final training data folder")
-    parser.add_argument('--validation_data', required=False, help="final validation data folder")
-    parser.add_argument('--unknown_data', required=False, help="final unknown data folder")
+    parser.add_argument('--training_data', default="/var/project/data/output/training/", required=False, help="final training data folder")
+    parser.add_argument('--validation_data', default="/var/project/data/output/training/", required=False, help="final validation data folder")
+    parser.add_argument('--unknown_data', default="/var/project/data/output/training/", required=False, help="final unknown data folder")
 
     args = parser.parse_args()
 
