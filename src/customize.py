@@ -1,10 +1,9 @@
 import os
 import sys
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib
+# import matplotlib
 # matplotlib.use('tkagg')
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from skimage.segmentation import slic
 from skimage.segmentation import mark_boundaries
 from skimage.util import img_as_float
