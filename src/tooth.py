@@ -347,16 +347,16 @@ def measure_accuracy(MODEL_DIRECTORY, data_train, dat_val):
 
 def main():
 
-    dataset_train = ToothDataset()
-    dataset_train.load_data("C:\\Projects\\tooth_damage_detection\data\\output\\training\\")
-    dataset_train.prepare()
+    # dataset_train = ToothDataset()
+    # dataset_train.load_data("C:\\Projects\\tooth_damage_detection\data\\output\\training\\")
+    # dataset_train.prepare()
 
-    dataset_val = ToothDataset()
-    dataset_val.load_data("C:\\Projects\\tooth_damage_detection\data\\output\\validation\\")
-    dataset_val.prepare()
+    # dataset_val = ToothDataset()
+    # dataset_val.load_data("C:\\Projects\\tooth_damage_detection\data\\output\\validation\\")
+    # dataset_val.prepare()
 
-    measure_accuracy("C:\\Users\\filippisc\Desktop\master\\new_tests\\results\\test_1", dataset_train, dataset_val)
-    exit()
+    # measure_accuracy("C:\\Users\\filippisc\Desktop\master\\new_tests\\results\\test_1", dataset_train, dataset_val)
+    # exit()
 
     # Directory to save logs and trained model
 
@@ -364,32 +364,76 @@ def main():
 
     # Parse command line arguments
     parser = argparse.ArgumentParser(
-        description='Train Mask R-CNN on MS COCO.')
+        description='Train custom Mask R-CNN on MS COCO.')
 
-    parser.add_argument('--data_dir', required=False, help="Path to weights .h5 file or 'coco'")
+    # parser.add_argument('--data_dir', required=False, help="Path to load data (it should has training, unkown, validation)")
+    parser.add_argument('--model_file', required=False, help="Path to initial .h5 file")
     parser.add_argument('--model_dir', required=False, help="Path to weights .h5 file or 'coco'")
     parser.add_argument('--init_with', required=False, default="coco", help="imagenet, coco, or last")
+    
+    parser.add_argument('--input_training_data', required=False, help="input training data folder")
+    parser.add_argument('--input_validation_data', required=False, help="input validation data folder")
+    parser.add_argument('--input_unknown_data', required=False, help="input unknown data folder")
+
+    parser.add_argument('--training_data', required=False, help="final training data folder")
+    parser.add_argument('--validation_data', required=False, help="final validation data folder")
+    parser.add_argument('--unknown_data', required=False, help="final unknown data folder")
 
     args = parser.parse_args()
 
-    print("data_dir: ", args.data_dir)
+    # print("data_dir: ", args.data_dir)
     print("model_dir: ", args.model_dir)
     print("init_with: ", args.init_with)
 
-    data_dir = 'C:\\Projects\\tooth_damage_detection\\data\\'
-    MODEL_DIR = os.path.join(data_dir, "logs")
 
-    if args.data_dir is not None:
-        data_dir = args.data_dir
+    # if args.data_dir is not None:
+    #     data_dir = args.data_dir
+    # else:
+    #     data_dir = 'C:\\Projects\\tooth_damage_detection\\data\\'
 
     if args.model_dir is not None:
         MODEL_DIR = args.model_dir
+    else:
+        MODEL_DIR ='C:\\Projects\\tooth_damage_detection\\data\\logs'
 
-    model_file = "mask_rcnn_coco.h5"
 
-    training_data_dir = data_dir + 'output/training/'
-    validation_data_dir = data_dir + 'output/validation/'
-    unknown_data_dir = data_dir + 'output/unknown/'
+    if args.input_training_data is not None:
+        input_training_data_dir = args.input_training_data
+    else:
+        input_training_data_dir = 'C:\\Projects\\tooth_damage_detection\\data\\annotator/training/'
+
+    if args.input_validation_data is not None:
+        input_validation_data_dir = args.input_validation_data
+    else:
+        input_validation_data_dir = 'C:\\Projects\\tooth_damage_detection\\data\\annotator/validation/'
+
+    if args.input_unknown_data is not None:
+        input_unknown_data_dir = args.input_unknown_data
+    else:
+        input_unknown_data_dir = 'C:\\Projects\\tooth_damage_detection\\data\\annotator/unknown/'
+
+    
+    if args.training_data is not None:
+        training_data_dir = args.training_data
+    else:
+        training_data_dir = 'C:\\Projects\\tooth_damage_detection\\data\\output/training/'
+
+    if args.validation_data is not None:
+        validation_data_dir = args.validation_data
+    else:
+        validation_data_dir = 'C:\\Projects\\tooth_damage_detection\\data\\output/validation/'
+
+    if args.unknown_data is not None:
+        unknown_data_dir = args.unknown_data
+    else:
+        unknown_data_dir = 'C:\\Projects\\tooth_damage_detection\\data\\output/unknown/'
+
+    if args.model_file is not None:
+        model_file = args.model_file
+        # COCO_MODEL_PATH = os.path.join(data_dir, model_file)
+        COCO_MODEL_PATH = model_file
+    else:
+        COCO_MODEL_PATH = 'C:\\Projects\\tooth_damage_detection\\data\\mask_rcnn_coco.h5'
 
     annotation_file = '_annotation_data.json'
 
@@ -397,12 +441,12 @@ def main():
     init_with = args.init_with  # imagenet, coco, or last
 
     force_load = False
-    process_data(data_dir + 'annotator/training/', training_data_dir, annotation_file, force_load=force_load)
-    process_data(data_dir + 'annotator/validation/', validation_data_dir, annotation_file, force_load=force_load)
-    process_data(data_dir + 'annotator/unknown/', unknown_data_dir, annotation_file, force_load=force_load)
+    process_data(input_training_data_dir, training_data_dir, annotation_file, force_load=force_load)
+    process_data(input_validation_data_dir, validation_data_dir, annotation_file, force_load=force_load)
+    process_data(input_unknown_data_dir, unknown_data_dir, annotation_file, force_load=force_load)
 
     # Local path to trained weights file
-    COCO_MODEL_PATH = os.path.join(data_dir, model_file)
+    # COCO_MODEL_PATH = os.path.join(data_dir, model_file)
     # Download COCO trained weights from Releases if needed
     if not os.path.exists(COCO_MODEL_PATH):
         print("downloading")
@@ -435,9 +479,10 @@ def main():
 
     print("load weights")
 
-    if init_with == "imagenet":
-        model.load_weights(model.get_imagenet_weights(), by_name=True)
-    elif init_with == "coco":
+    # if init_with == "imagenet":
+    #     model.load_weights(model.get_imagenet_weights(), by_name=True)
+    # elif init_with == "coco":
+    if init_with == "coco":
         # Load weights trained on MS COCO, but skip layers that
         # are different due to the different number of classes
         # See README for instructions to download the COCO weights
@@ -455,7 +500,7 @@ def main():
 
     print("Fine tune all layers")
 
-    measure_accuracy(MODEL_DIR, dataset_train, dataset_val)
+    # measure_accuracy(MODEL_DIR, dataset_train, dataset_val)
 
 
 if __name__ == '__main__':

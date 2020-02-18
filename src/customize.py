@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
-matplotlib.use('tkagg')
+# matplotlib.use('tkagg')
 import matplotlib.pyplot as plt
 from skimage.segmentation import slic
 from skimage.segmentation import mark_boundaries
@@ -28,7 +28,7 @@ def create_superpixels(image=None, image_file="C:\\Projects\\tooth_damage_detect
     # matplotlib.use('tkagg')
     # import matplotlib.pyplot as plt
 
-    return slic(image, n_segments = 300, max_iter=9, sigma = 0.2)#.astype(np.uint8)
+    return slic(image, n_segments = 900, max_iter=9, sigma = 0.15)#.astype(np.uint8)
             
     # # show the output of SLIC
     # fig = plt.figure("Superpixels -- %d segments" % (9))
@@ -96,11 +96,15 @@ def combine_masks_and_superpixels(masks, class_ids, superpixels):
         superpixel = superpixels == i
     
         sup_class = classes == superpixel_class
-        sup_class = sup_class.astype(np.uint8)
+        # sup_class = sup_class.astype(np.uint8)
 
         result_masks[superpixel] = sup_class
-    
-    return result_masks, classes, np.array(superpixels_bboxes)
+    return [{
+        'class_ids': classes,
+        'masks': result_masks.astype(np.bool),
+        'rois': np.array(superpixels_bboxes).astype(np.int32),
+        'scores' : np.full((result_masks.shape[2],), 0.21).astype(np.float32)
+    }]
 
 
 def decide_class(superpixel_classes):
@@ -190,12 +194,28 @@ def get_superpixel_class_weight(superpixel, mask, class_id, mask_index):
     return np.sum(result)
 
 
-def transform_masks_to_superpixel(results, original_image, class_names, show_image=False):
+def transform_masks_to_superpixel(results, original_image, show_image=False):
+
+    r = results[0]
+    superpixels = create_superpixels(image=original_image)
+    return combine_masks_and_superpixels(r['masks'].astype(np.uint8), r['class_ids'].astype(np.uint8), superpixels)
+
+
+def display_colored_instances(results, original_image, class_names):
+    colors = {
+        "cat_1": (0, 0.5, 0),
+        "cat_2": (0, 1, 1),
+        "cat_3": (1, 0, 1),
+        "cat_4": (0, 0, 1),
+        "cat_5": (1, 0, 0),
+        "cat_6": (0, 0, 0)
+    }
+
     r = results[0]
 
-    # if(show_image == True):
-    #     visualize.display_instances(original_image, r['rois'], r['masks'], r['class_ids'],
-    #                             class_names, r['scores'], figsize=(8, 8))
-    
-    superpixels = create_superpixels(image=original_image)
-    return combine_masks_and_superpixels(r['masks'], r['class_ids'], superpixels)
+    final_colors = list()
+    for classs in r['class_ids']:
+        final_colors.append(colors['cat_' + str(classs)])
+
+    visualize.display_instances(image=original_image, masks=r["masks"], boxes=r['rois'], class_ids=r["class_ids"],
+                                class_names=class_names, scores=r["scores"], figsize=(8, 8),  colors=final_colors)

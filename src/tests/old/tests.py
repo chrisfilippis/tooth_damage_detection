@@ -55,7 +55,7 @@ def get_colors(N, bright=True):
 
 def create_superpixels(image=None, image_file="C:\\Projects\\tooth_damage_detection_deeplab\\data\\annotator\\training\\anaxristina37.jpg"):
     
-    if(not image.any()):
+    if(image is None):
         # load the image and convert it to a floating point data type
         image = img_as_float(io.imread(image_file))
     
@@ -311,6 +311,9 @@ def get_superpixel_class_weight(superpixel, mask, class_id, mask_index):
 
     return np.sum(result)
 
+
+create_superpixels()
+exit()
 
 data_dir = 'C:/Projects/tooth_damage_detection/data/'
 training_data_dir = data_dir + 'output/training/'

@@ -38,7 +38,7 @@ from skimage.util import img_as_float
 from skimage import io
 from operator import itemgetter 
 from itertools import groupby
-from customize import create_superpixels, combine_masks_and_superpixels, transform_masks_to_superpixel
+from customize import create_superpixels, combine_masks_and_superpixels, transform_masks_to_superpixel, display_colored_instances
 
 data_dir = 'C:/Projects/tooth_damage_detection/data/'
 
@@ -48,7 +48,7 @@ unknown_data_dir = data_dir + 'output/unknown/'
 
 annotation_file = '_annotation_data.json'
 
-MODEL_DIR = "C:/Users/filippisc/Desktop/master/new_tests/final_test_noresize//"
+MODEL_DIR = "C:/Users/filippisc/Desktop/master/new_tests//results//test_1//"
 
 
 print("Loading training dataset")
@@ -208,54 +208,156 @@ def display_instances(image, boxes, masks, class_ids, class_names,
         plt.show()
 
 
-results = model.detect([original_image], verbose=0)
+def compute_matches(gt_boxes, gt_class_ids, gt_masks,
+                    pred_boxes, pred_class_ids, pred_scores, pred_masks,
+                    iou_threshold=0.5, score_threshold=0.0):
+    """Finds matches between prediction and ground truth instances.
+
+    Returns:
+        gt_match: 1-D array. For each GT box it has the index of the matched
+                  predicted box.
+        pred_match: 1-D array. For each predicted box, it has the index of
+                    the matched ground truth box.
+        overlaps: [pred_boxes, gt_boxes] IoU overlaps.
+    """
+    # Trim zero padding
+    # TODO: cleaner to do zero unpadding upstream
+    gt_boxes = utils.trim_zeros(gt_boxes)
+    gt_masks = gt_masks[..., :gt_boxes.shape[0]]
+    pred_boxes = utils.trim_zeros(pred_boxes)
+    pred_scores = pred_scores[:pred_boxes.shape[0]]
+    # Sort predictions by score from high to low
+    indices = np.argsort(pred_scores)[::-1]
+    pred_boxes = pred_boxes[indices]
+    pred_class_ids = pred_class_ids[indices]
+    pred_scores = pred_scores[indices]
+    pred_masks = pred_masks[..., indices]
+
+    # Compute IoU overlaps [pred_masks, gt_masks]
+    overlaps = utils.compute_overlaps_masks(pred_masks, gt_masks)
+
+    # Loop through predictions and find matching ground truth boxes
+    match_count = 0
+    pred_match = -1 * np.ones([pred_boxes.shape[0]])
+    gt_match = -1 * np.ones([gt_boxes.shape[0]])
+    for i in range(len(pred_boxes)):
+        # Find best matching ground truth box
+        # 1. Sort matches by score
+        sorted_ixs = np.argsort(overlaps[i])[::-1]
+        # 2. Remove low scores
+        low_score_idx = np.where(overlaps[i, sorted_ixs] < score_threshold)[0]
+        if low_score_idx.size > 0:
+            sorted_ixs = sorted_ixs[:low_score_idx[0]]
+            
+        # 3. Find the match
+        for j in sorted_ixs:
+            # If ground truth box is already matched, go to next one
+            if gt_match[j] > -1:
+                continue
+            # If we reach IoU smaller than the threshold, end the loop
+            iou = overlaps[i, j]
+            print('iou', iou)
+            if iou < iou_threshold:
+                break
+            # Do we have a match?
+            if pred_class_ids[i] == gt_class_ids[j]:
+                match_count += 1
+                gt_match[j] = i
+                pred_match[i] = j
+                break
+
+    return gt_match, pred_match, overlaps
 
 
-r = results[0]
+def compute_ap(gt_boxes, gt_class_ids, gt_masks,
+               pred_boxes, pred_class_ids, pred_scores, pred_masks,
+               iou_threshold=0.5):
+    """Compute Average Precision at a set IoU threshold (default 0.5).
 
-colors = {
+    Returns:
+    mAP: Mean Average Precision
+    precisions: List of precisions at different class score thresholds.
+    recalls: List of recall values at different class score thresholds.
+    overlaps: [pred_boxes, gt_boxes] IoU overlaps.
+    """
+    # Get matches and overlaps
+    gt_match, pred_match, overlaps = compute_matches(
+        gt_boxes, gt_class_ids, gt_masks,
+        pred_boxes, pred_class_ids, pred_scores, pred_masks,
+        iou_threshold)
 
-    "cat_1": (0, 0.5, 0),
-    "cat_2": (0, 1, 1),
-    "cat_3": (1, 0, 1),
-    "cat_4": (0, 0, 1),
-    "cat_5": (1, 0, 0),
-    "cat_6": (0, 0, 0)
-}
+    # Compute precision and recall at each prediction box step
+    precisions = np.cumsum(pred_match > -1) / (np.arange(len(pred_match)) + 1)
+    recalls = np.cumsum(pred_match > -1).astype(np.float32) / len(gt_match)
 
-final_colors = list()
-for classs in r['class_ids']:
-    final_colors.append(colors['cat_' + str(classs)])
+    # Pad with start and end values to simplify the math
+    precisions = np.concatenate([[0], precisions, [0]])
+    recalls = np.concatenate([[0], recalls, [1]])
 
-display_instances(image=original_image, masks=r["masks"], boxes=r['rois'], class_ids=r["class_ids"],
-                             class_names=dataset_val.class_names, figsize=(8, 8), colors=final_colors)
-results = transform_masks_to_superpixel(results, original_image, dataset_val.class_names)
-msks, cls_ids, bboxes = combine_masks_and_superpixels(r['masks'].astype(np.uint8), r['class_ids'].astype(np.uint8), create_superpixels(image=original_image))
+    # Ensure precision values decrease but don't increase. This way, the
+    # precision value at each recall threshold is the maximum it can be
+    # for all following recall thresholds, as specified by the VOC paper.
+    for i in range(len(precisions) - 2, -1, -1):
+        precisions[i] = np.maximum(precisions[i], precisions[i + 1])
 
-final_colors = list()
-for classs in cls_ids:
-    final_colors.append(colors['cat_' + str(classs)])
+    # Compute mean AP over recall range
+    indices = np.where(recalls[:-1] != recalls[1:])[0] + 1
+    mAP = np.sum((recalls[indices] - recalls[indices - 1]) *
+                 precisions[indices])
 
-display_instances(image=original_image, masks=np.array(msks), boxes=np.array(bboxes), class_ids=np.array(cls_ids),
-                            class_names=dataset_val.class_names, figsize=(8, 8), colors=final_colors)
-exit()
+    return mAP, precisions, recalls, overlaps
+
+
+# results = model.detect([original_image], verbose=0)
+# display_colored_instances(results, original_image, dataset_val.class_names)
+
+# results = transform_masks_to_superpixel(results, original_image, dataset_val.class_names)
+# display_colored_instances(results, original_image, dataset_val.class_names)
+
 # Compute VOC-Style mAP @ IoU=0.5
 # Running on 10 images. Increase for better accuracy.
 image_ids = np.random.choice(dataset_unknown.image_ids, 4)
 APs = []
+APs_ = []
 for image_id in image_ids:
     # Load image and ground truth data
     image, image_meta, gt_class_id, gt_bbox, gt_mask = \
         modellib.load_image_gt(dataset_unknown, inference_config,
-                               image_id, use_mini_mask=False)
+                                image_id, use_mini_mask=False)
     molded_images = np.expand_dims(modellib.mold_image(image, inference_config), 0)
     # Run object detection
     results = model.detect([image], verbose=0)
+    display_colored_instances(results, image, dataset_train.class_names)
     r = results[0]
     # Compute AP
+    # print('rois', r["rois"])
+    # print('class_ids', r["class_ids"])
+    # print('scores', r["scores"])
+    # print('masks', r["masks"])
+
     AP, precisions, recalls, overlaps = \
-        utils.compute_ap(gt_bbox, gt_class_id, gt_mask,
-                         r["rois"], r["class_ids"], r["scores"], r['masks'])
+        compute_ap(gt_bbox, gt_class_id, gt_mask,
+                            r["rois"], r["class_ids"], r["scores"], r['masks'])
     APs.append(AP)
+    
+    print('AP', AP)
+
+    results_ = transform_masks_to_superpixel(results, image)
+    display_colored_instances(results_, image, dataset_train.class_names)
+    r_ = results_[0]
+    # Compute AP
+    # print('rois', r_["rois"])
+    # print('class_ids', r_["class_ids"])
+    # print('scores', r_["scores"])
+    # print('masks', r_["masks"])
+
+    AP_, precisions_, recalls_, overlaps_ = \
+    compute_ap(gt_bbox, gt_class_id, gt_mask,
+                         r_["rois"], r_["class_ids"], r_["scores"], r_['masks'])
+    APs_.append(AP_)
+
+    print('AP_', AP_)
+    print('---------------------')
 
 print("mAP: ", np.mean(APs))
+print("mAPs_: ", np.mean(APs_))

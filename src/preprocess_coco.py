@@ -137,7 +137,7 @@ def ensure_directory_existence(directory_path):
             os.mkdir(directory_path)
         except OSError:
             print("Creation of the directory %s failed" % directory_path)
-        return;
+        return
 
 
 def empty_directory(directory_path):
@@ -151,7 +151,7 @@ def process_data(input_directory, output_directory, annotation_file_name='region
     # output_directory = 'C:\\Projects\\tooth_damage_detection\\data\\output\\'
 
     if not force_load and os.path.isfile(output_directory + annotation_file_name):
-        return;
+        return
 
     ensure_directory_existence(output_directory)
     empty_directory(output_directory)
