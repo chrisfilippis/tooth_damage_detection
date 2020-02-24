@@ -70,15 +70,21 @@ def train(model, data_train, data_val, cfg):
 
     model.train(data_train, data_val,
                 learning_rate=cfg.LEARNING_RATE,
-                epochs=200,
+                epochs=100,
+                layers='4+',
+                augmentation=augmentation)
+    
+    model.train(data_train, data_val,
+                learning_rate=cfg.LEARNING_RATE,
+                epochs=120,
                 layers='all',
                 augmentation=augmentation)
 
-    # model.train(data_train, data_val,
-    #             learning_rate=cfg.LEARNING_RATE/10,
-    #             epochs=200,
-    #             layers='all',
-    #             augmentation=augmentation)
+    model.train(data_train, data_val,
+                learning_rate=cfg.LEARNING_RATE/10,
+                epochs=140,
+                layers='all',
+                augmentation=augmentation)
 
     # Save weights
     # Typically not needed because callbacks save after every epoch
