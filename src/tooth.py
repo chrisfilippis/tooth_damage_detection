@@ -62,30 +62,67 @@ def train(model, data_train, data_val, cfg):
 
     # es_callback = keras.callbacks.EarlyStopping(monitor='val_loss', mode='min', verbose=1)
 
+    #test 1
+
+    # model.train(data_train, data_val,
+    #             learning_rate=cfg.LEARNING_RATE,
+    #             epochs=60,
+    #             layers='heads',
+    #             augmentation=augmentation)
+
+    # model.train(data_train, data_val,
+    #             learning_rate=cfg.LEARNING_RATE,
+    #             epochs=100,
+    #             layers='4+',
+    #             augmentation=augmentation)
+    
+    # model.train(data_train, data_val,
+    #             learning_rate=cfg.LEARNING_RATE,
+    #             epochs=120,
+    #             layers='all',
+    #             augmentation=augmentation)
+
+    # model.train(data_train, data_val,
+    #             learning_rate=cfg.LEARNING_RATE/10,
+    #             epochs=140,
+    #             layers='all',
+    #             augmentation=augmentation)
+
+    # test 2
+
     model.train(data_train, data_val,
                 learning_rate=cfg.LEARNING_RATE,
-                epochs=60,
+                epochs=20,
                 layers='heads',
                 augmentation=augmentation)
 
     model.train(data_train, data_val,
                 learning_rate=cfg.LEARNING_RATE,
-                epochs=100,
+                epochs=40,
                 layers='4+',
                 augmentation=augmentation)
     
     model.train(data_train, data_val,
                 learning_rate=cfg.LEARNING_RATE,
-                epochs=120,
+                epochs=60,
                 layers='all',
                 augmentation=augmentation)
 
+    return
+
+    # test 3
+
     model.train(data_train, data_val,
-                learning_rate=cfg.LEARNING_RATE/10,
+                learning_rate=cfg.LEARNING_RATE,
+                epochs=100,
+                layers='heads',
+                augmentation=augmentation)
+    
+    model.train(data_train, data_val,
+                learning_rate=cfg.LEARNING_RATE,
                 epochs=140,
                 layers='all',
                 augmentation=augmentation)
-
     # Save weights
     # Typically not needed because callbacks save after every epoch
     # Uncomment to save manually
