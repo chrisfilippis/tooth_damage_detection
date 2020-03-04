@@ -104,7 +104,7 @@ def train(model, data_train, data_val, cfg):
     
     model.train(data_train, data_val,
                 learning_rate=cfg.LEARNING_RATE,
-                epochs=60,
+                epochs=80,
                 layers='all',
                 augmentation=augmentation)
 
