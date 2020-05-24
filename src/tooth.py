@@ -18,6 +18,7 @@ from skimage.segmentation import mark_boundaries
 from skimage.util import img_as_float
 from skimage import io
 from customize import create_superpixels, combine_masks_and_superpixels, transform_masks_to_superpixel
+import schedules
 
 
 class ToothConfig(Config):
@@ -48,86 +49,7 @@ class ToothConfig(Config):
 
 
 def train(model, data_train, data_val, cfg):
-    # augmentation = imgaug.augmenters.Fliplr(0.5)
-
-    augmentation = iaa.OneOf([
-        imgaug.augmenters.Fliplr(1.0),
-        imgaug.augmenters.Flipud(1.0)
-    ])
-
-    # Train the head branches
-    # Passing layers="heads" freezes all layers except the head
-    # layers. You can also pass a regular expression to select
-    # which layers to train by name pattern.
-
-    # es_callback = keras.callbacks.EarlyStopping(monitor='val_loss', mode='min', verbose=1)
-
-    #test 1
-
-    # model.train(data_train, data_val,
-    #             learning_rate=cfg.LEARNING_RATE,
-    #             epochs=60,
-    #             layers='heads',
-    #             augmentation=augmentation)
-
-    # model.train(data_train, data_val,
-    #             learning_rate=cfg.LEARNING_RATE,
-    #             epochs=100,
-    #             layers='4+',
-    #             augmentation=augmentation)
-    
-    # model.train(data_train, data_val,
-    #             learning_rate=cfg.LEARNING_RATE,
-    #             epochs=120,
-    #             layers='all',
-    #             augmentation=augmentation)
-
-    # model.train(data_train, data_val,
-    #             learning_rate=cfg.LEARNING_RATE/10,
-    #             epochs=140,
-    #             layers='all',
-    #             augmentation=augmentation)
-
-    # test 2
-
-    model.train(data_train, data_val,
-                learning_rate=cfg.LEARNING_RATE,
-                epochs=20,
-                layers='heads',
-                augmentation=augmentation)
-
-    model.train(data_train, data_val,
-                learning_rate=cfg.LEARNING_RATE,
-                epochs=40,
-                layers='4+',
-                augmentation=augmentation)
-    
-    model.train(data_train, data_val,
-                learning_rate=cfg.LEARNING_RATE,
-                epochs=80,
-                layers='all',
-                augmentation=augmentation)
-
-    return
-
-    # test 3
-
-    model.train(data_train, data_val,
-                learning_rate=cfg.LEARNING_RATE,
-                epochs=100,
-                layers='heads',
-                augmentation=augmentation)
-    
-    model.train(data_train, data_val,
-                learning_rate=cfg.LEARNING_RATE,
-                epochs=140,
-                layers='all',
-                augmentation=augmentation)
-    # Save weights
-    # Typically not needed because callbacks save after every epoch
-    # Uncomment to save manually
-    # model_path = os.path.join(MODEL_DIR, "mask_rcnn_shapes.h5")
-    # model.keras_model.save_weights(model_path)
+    schedules.schedule1(model, data_train, data_val, cfg)
 
 
 class ToothDataset(utils.Dataset):
