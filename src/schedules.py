@@ -29,6 +29,20 @@ def schedule1(model, data_train, data_val, cfg):
 
     model.train(data_train, data_val,
                 learning_rate=cfg.LEARNING_RATE,
+                epochs=110,
+                layers='all',
+                augmentation=augmentation)
+
+    return
+
+    model.train(data_train, data_val,
+                learning_rate=cfg.LEARNING_RATE,
+                epochs=60,
+                layers='heads',
+                augmentation=augmentation)
+
+    model.train(data_train, data_val,
+                learning_rate=cfg.LEARNING_RATE,
                 epochs=100,
                 layers='4+',
                 augmentation=augmentation)
