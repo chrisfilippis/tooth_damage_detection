@@ -33,7 +33,13 @@ def schedule1(model, data_train, data_val, cfg):
                 layers='all',
                 augmentation=augmentation)
 
-    return
+
+def schedule2(model, data_train, data_val, cfg):
+    
+    augmentation = iaa.OneOf([
+        imgaug.augmenters.Fliplr(1.0),
+        imgaug.augmenters.Flipud(1.0)
+    ])
 
     model.train(data_train, data_val,
                 learning_rate=cfg.LEARNING_RATE,
@@ -59,8 +65,7 @@ def schedule1(model, data_train, data_val, cfg):
                 layers='all',
                 augmentation=augmentation)
 
-
-def schedule2(model, data_train, data_val, cfg):
+def schedule3(model, data_train, data_val, cfg):
     
     augmentation = iaa.OneOf([
         imgaug.augmenters.Fliplr(1.0),
@@ -82,25 +87,6 @@ def schedule2(model, data_train, data_val, cfg):
     model.train(data_train, data_val,
                 learning_rate=cfg.LEARNING_RATE,
                 epochs=80,
-                layers='all',
-                augmentation=augmentation)
-
-def schedule3(model, data_train, data_val, cfg):
-    
-    augmentation = iaa.OneOf([
-        imgaug.augmenters.Fliplr(1.0),
-        imgaug.augmenters.Flipud(1.0)
-    ])
-
-    model.train(data_train, data_val,
-            learning_rate=cfg.LEARNING_RATE,
-            epochs=100,
-            layers='heads',
-            augmentation=augmentation)
-    
-    model.train(data_train, data_val,
-                learning_rate=cfg.LEARNING_RATE,
-                epochs=140,
                 layers='all',
                 augmentation=augmentation)
 
