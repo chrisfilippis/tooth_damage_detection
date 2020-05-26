@@ -28,7 +28,7 @@ CMD python -c "import tensorflow as tf; tf.enable_eager_execution(); print(tf.re
 # sudo docker run -it --name cfapp --gpus all -v ~/project/logs:/var/project/logs cfil:latest bash
 
 # nohup python src/tooth.py --data_dir=/var/project/data/ --model_dir=/var/project/logs/heads_8/ --init_with=coco > output.txt &
-# nohup python src/tooth.py --model_file=/var/project/logs/mask_rcnn_coco.h5 --model_dir=/var/project/logs/t_1/ --init_with=coco > output.txt &
+# nohup python src/tooth.py --model_file=/var/project/logs/mask_rcnn_coco.h5 --model_dir=/var/project/logs/t_2/ --init_with=coco > output.txt &
 # nohup python src/tooth.py --model_file=/var/project/logs/mask_rcnn_coco.h5 --model_dir=/var/project/logs/t_1/ --init_with=last > output.txt &
 # docker exec -it tooth_maskrcnn /bin/bash
 # nohup python /var/project/src/tooth.py --data_dir=/var/project/data/ --model_dir=/var/project/logs/test_1/ --init_with=coco > /var/project/output.txt &

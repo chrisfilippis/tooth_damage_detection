@@ -49,7 +49,7 @@ class ToothConfig(Config):
 
 
 def train(model, data_train, data_val, cfg):
-    schedules.schedule2(model, data_train, data_val, cfg)
+    schedules.schedule3(model, data_train, data_val, cfg)
 
 
 class ToothDataset(utils.Dataset):

@@ -89,5 +89,3 @@ def schedule3(model, data_train, data_val, cfg):
                 epochs=80,
                 layers='all',
                 augmentation=augmentation)
-
-                
