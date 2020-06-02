@@ -17,7 +17,7 @@ from skimage.segmentation import slic
 from skimage.segmentation import mark_boundaries
 from skimage.util import img_as_float
 from skimage import io
-from customize import create_superpixels, combine_masks_and_superpixels, transform_masks_to_superpixel
+from customize import create_superpixels, combine_masks_and_superpixels, transform_masks_to_superpixel, get_superpixels, display_colored_instances
 import schedules
 
 
@@ -86,6 +86,9 @@ class ToothDataset(utils.Dataset):
                 height=coco.imgs[i]["height"],
                 annotations=coco.loadAnns(coco.getAnnIds(
                     imgIds=[i], catIds=classes, iscrowd=None)))
+        
+        self.coco = coco
+        
         if return_coco:
             return coco
 
@@ -182,41 +185,8 @@ class ToothDataset(utils.Dataset):
         return m
 
 
-def visualize_colored_instances(model, class_names, img, results):
-    colors = {
-        "cat_1": (0, 0.5, 0),
-        "cat_2": (0, 1, 1),
-        "cat_3": (1, 0, 1),
-        "cat_4": (0, 0, 1),
-        "cat_5": (1, 0, 0),
-        "cat_6": (0, 0, 0)
-    }
-
-    final_colors = find_colors(r['class_ids'])
-
-    visualize.display_instances(img, results['rois'], results['masks'], results['class_ids'],
-                                class_names, results['scores'], figsize=(8, 8))
-
-
-def find_colors(class_ids):
-    colors = {
-
-        "cat_1": (0, 0.5, 0),
-        "cat_2": (0, 1, 1),
-        "cat_3": (1, 0, 1),
-        "cat_4": (0, 0, 1),
-        "cat_5": (1, 0, 0),
-        "cat_6": (0, 0, 0)
-    }
-
-    final_colors = list()
-    for classs in class_ids:
-        final_colors.append(colors['cat_' + str(classs)])
-
-    return final_colors
-
-
 def measure_accuracy(MODEL_DIRECTORY, data_train, dat_val):
+
     class InferenceConfig(ToothConfig):
         GPU_COUNT = 1
         IMAGES_PER_GPU = 1
@@ -228,9 +198,6 @@ def measure_accuracy(MODEL_DIRECTORY, data_train, dat_val):
                               config=inference_config,
                               model_dir=MODEL_DIRECTORY)
 
-    # Get path to saved weights
-    # Either set a specific path or find last trained weights
-    # model_path = os.path.join(ROOT_DIR, ".h5 file name here")
     model_path = model.find_last()
 
     # Load trained weights
@@ -248,7 +215,6 @@ def measure_accuracy(MODEL_DIRECTORY, data_train, dat_val):
     log("gt_class_id", gt_class_id)
     log("gt_bbox", gt_bbox)
     log("gt_mask", gt_mask)
-
     
     visualize.display_instances(original_image, gt_bbox, gt_mask, gt_class_id,
                                 data_train.class_names, figsize=(8, 8))
@@ -272,7 +238,7 @@ def measure_accuracy(MODEL_DIRECTORY, data_train, dat_val):
     visualize.display_instances(original_image, r['rois'], r['masks'], r['class_ids'],
                                 data_train.class_names, r['scores'], figsize=(8, 8))
 
-    msks, cls_ids, bboxes = transform_masks_to_superpixel(results, original_image, data_train.class_names)
+    msks, cls_ids, bboxes = transform_masks_to_superpixel(results, original_image, dat_val.coco.imgs[img_id]['annotation_file_path'], data_train.class_names)
 
     final_colors = list()
     for classs in cls_ids:
@@ -309,18 +275,93 @@ def measure_accuracy(MODEL_DIRECTORY, data_train, dat_val):
     print("mAP: ", np.mean(APs))
 
 
+def measure_accuracy_superpixel(MODEL_DIRECTORY, data_train, dat_val):    
+
+    class InferenceConfig(ToothConfig):
+        GPU_COUNT = 1
+        IMAGES_PER_GPU = 1
+
+    inference_config = InferenceConfig()
+
+    # Recreate the model in inference mode
+    model = modellib.MaskRCNN(mode="inference",
+                              config=inference_config,
+                              model_dir=MODEL_DIRECTORY)
+
+    model_path = model.find_last()
+
+    # Load trained weights
+    print("Loading weights from ", model_path)
+    model.load_weights(model_path, by_name=True)
+
+    # Test on a random image
+    img_id = random.choice(dat_val.image_ids)    
+    img_id = 0
+    original_image, image_meta, gt_class_id, gt_bbox, gt_mask = \
+        modellib.load_image_gt(dat_val, inference_config,
+                               img_id, use_mini_mask=False)
+    print("img_id", img_id)
+    print('image_meta', image_meta)
+    print('coco', dat_val.coco.imgs[img_id+1])
+
+    log("original_image", original_image)
+    log("image_meta", image_meta)
+    log("gt_class_id", gt_class_id)
+    log("gt_bbox", gt_bbox)
+    log("gt_mask", gt_mask)
+
+    # display_colored_instances(original_image, gt_bbox, gt_mask, gt_class_id, data_train.class_names, scores=None)
+
+    results = model.detect([original_image], verbose=1)
+    r = results[0]
+
+    # display_colored_instances(original_image, r['rois'], r['masks'], r['class_ids'], data_train.class_names, r['scores'])
+
+    results = transform_masks_to_superpixel(results, original_image, dat_val.coco.imgs[img_id+1]['annotation_file_path'])
+    r = results[0]
+
+    display_colored_instances(original_image, r['rois'], r['masks'], r['class_ids'], dat_val.class_names)
+
+    log('rois', r['rois'])
+    log('masks', r['masks'])
+    log('class_ids', r['class_ids'])
+    log('scores', r['scores'])
+    exit()
+
+    # Compute VOC-Style mAP @ IoU=0.5
+    # Running on 10 images. Increase for better accuracy.
+    image_ids = np.random.choice(data_train.image_ids, 10)
+    APs = []
+    for img_id in image_ids:
+        # Load image and ground truth data
+        image, image_meta, gt_class_id, gt_bbox, gt_mask = \
+            modellib.load_image_gt(data_train, inference_config,
+                                   img_id, use_mini_mask=False)
+        molded_images = np.expand_dims(modellib.mold_image(image, inference_config), 0)
+        # Run object detection
+        results = model.detect([image], verbose=0)
+        r = results[0]
+        # Compute AP
+        AP, precisions, recalls, overlaps = \
+            utils.compute_ap(gt_bbox, gt_class_id, gt_mask,
+                             r["rois"], r["class_ids"], r["scores"], r['masks'])
+        APs.append(AP)
+
+    print("mAP: ", np.mean(APs))
+
+
 def main():
 
-    # dataset_train = ToothDataset()
-    # dataset_train.load_data("C:\\Projects\\tooth_damage_detection\data\\output\\training\\")
-    # dataset_train.prepare()
+    dataset_train = ToothDataset()
+    dataset_train.load_data("C:\\Projects\\tooth_damage_detection\data\\output\\training\\")
+    dataset_train.prepare()
 
-    # dataset_val = ToothDataset()
-    # dataset_val.load_data("C:\\Projects\\tooth_damage_detection\data\\output\\validation\\")
-    # dataset_val.prepare()
+    dataset_val = ToothDataset()
+    dataset_val.load_data("C:\\Projects\\tooth_damage_detection\data\\output\\validation\\")
+    dataset_val.prepare()
 
-    # measure_accuracy("C:\\Users\\filippisc\Desktop\master\\new_tests\\results\\test_1", dataset_train, dataset_val)
-    # exit()
+    measure_accuracy_superpixel("C:\\Users\\filippisc\Desktop\master\\new_tests\\results\\test_1", dataset_train, dataset_val)
+    exit()
 
     # Directory to save logs and trained model
 
@@ -331,17 +372,17 @@ def main():
         description='Train custom Mask R-CNN on MS COCO.')
 
     # parser.add_argument('--data_dir', required=False, help="Path to load data (it should has training, unkown, validation)")
-    parser.add_argument('--model_file', required=False, default="mask_rcnn_coco.h5", help="Path to initial .h5 file")
+    parser.add_argument('--model_file', required=False, help="Path to initial .h5 file")
     parser.add_argument('--init_with', required=False, default="coco", help="imagenet, coco, or last")
     parser.add_argument('--model_dir', required=False, help="Path to weights .h5 file or 'coco'")
     
-    parser.add_argument('--input_training_data', default="/var/project/data/annotator/training/", required=False, help="input training data folder")
-    parser.add_argument('--input_validation_data', default="/var/project/data/annotator/validation/",required=False, help="input validation data folder")
-    parser.add_argument('--input_unknown_data', default="/var/project/data/annotator/unknown/", required=False, help="input unknown data folder")
+    parser.add_argument('--input_training_data', required=False, help="input training data folder")
+    parser.add_argument('--input_validation_data', required=False, help="input validation data folder")
+    parser.add_argument('--input_unknown_data', required=False, help="input unknown data folder")
 
-    parser.add_argument('--training_data', default="/var/project/data/output/training/", required=False, help="final training data folder")
-    parser.add_argument('--validation_data', default="/var/project/data/output/training/", required=False, help="final validation data folder")
-    parser.add_argument('--unknown_data', default="/var/project/data/output/training/", required=False, help="final unknown data folder")
+    parser.add_argument('--training_data', required=False, help="final training data folder")
+    parser.add_argument('--validation_data', required=False, help="final validation data folder")
+    parser.add_argument('--unknown_data', required=False, help="final unknown data folder")
 
     args = parser.parse_args()
 
@@ -404,11 +445,11 @@ def main():
     # Which weights to start with?
     init_with = args.init_with  # imagenet, coco, or last
 
-    force_load = False
+    force_load = True
     process_data(input_training_data_dir, training_data_dir, annotation_file, force_load=force_load)
     process_data(input_validation_data_dir, validation_data_dir, annotation_file, force_load=force_load)
     process_data(input_unknown_data_dir, unknown_data_dir, annotation_file, force_load=force_load)
-
+    exit()
     # Local path to trained weights file
     # COCO_MODEL_PATH = os.path.join(data_dir, model_file)
     # Download COCO trained weights from Releases if needed

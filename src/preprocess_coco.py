@@ -5,7 +5,83 @@ from os.path import isfile, join
 import json
 from shutil import copyfile
 import zipfile
+import numpy as np
+import operator as operator
+from matplotlib.path import Path
+from skimage import draw
+from skimage.draw import polygon
+import skimage
 
+
+
+def get_superpixel_volume(superpixel, superpixels, indx=0):
+    
+    superpixel_volume = 0
+    min_y = 1024
+    min_x = 768
+    max_y = 0
+    max_x = 0
+
+    for x in range(superpixel.shape[0]):
+        # print(str(x), str(np.unique(superpixel[:,x])) + ' / ' + str(np.unique(superpixels[:,x])))
+
+        # if(len(np.unique(superpixel[x])) > 1):
+            # print(np.where(superpixel[x] == True))
+            # print(np.unique(superpixel[x]))
+
+        for y in range(superpixel.shape[1]):
+            if(superpixel[x][y] == True):
+                
+                # print(str(indx) + ': ' + str(x) + '/' + str(y), superpixel[x][y])
+                
+                if(y > max_y):
+                    max_y = y
+                if(x > max_x):
+                    max_x = x
+
+                if(y < min_y):
+                    min_y = y
+                if(x < min_x):
+                    min_x = x
+
+                superpixel_volume = superpixel_volume + 1
+
+    # print(superpixels)
+    
+    return superpixel_volume, max_x, max_y, min_x, min_y
+
+def polygon2mask(image_shape, polygon):
+    """Compute a mask from polygon.
+    Parameters
+    ----------
+    image_shape : tuple of size 2.
+        The shape of the mask.
+    polygon : array_like.
+        The polygon coordinates of shape (N, 2) where N is
+        the number of points.
+    Returns
+    -------
+    mask : 2-D ndarray of type 'bool'.
+        The mask that corresponds to the input polygon.
+    Notes
+    -----
+    This function does not do any border checking, so that all
+    the vertices need to be within the given shape.
+    Examples
+    --------
+    >>> image_shape = (128, 128)
+    >>> polygon = np.array([[60, 100], [100, 40], [40, 40]])
+    >>> mask = polygon2mask(image_shape, polygon)
+    >>> mask.shape
+    (128, 128)
+    """
+    polygon = np.asarray(polygon)
+    vertex_row_coords, vertex_col_coords = polygon.T
+    fill_row_coords, fill_col_coords = draw.polygon(
+        vertex_row_coords, vertex_col_coords, image_shape)
+    mask = np.zeros(image_shape, dtype=np.bool)
+    mask[fill_row_coords, fill_col_coords] = True
+    return mask
 
 def get_input_files(directory_path, extension='zip'):
     return [f for f in listdir(directory_path) if isfile(join(directory_path, f)) and f.endswith('.' + extension)]
@@ -56,13 +132,143 @@ def process_regions_of_interest(roi_files):
     return regions
 
 
-def create_image_json_data_for_image(image_name, name_mapping_dic):
+def sort_cordinates(x, y):
+    L = sorted(zip(x,y), key=operator.itemgetter(0))
+    return zip(*L)
+
+
+def get_class_from_roi(s):
+    try: 
+        return int(s.split('-')[0])
+    except ValueError:
+        return 0
+
+
+def get_superpixels_new(annotation_file_path):
+    annotation_polygon = filter_zip(annotation_file_path)
+    roi = list(annotation_polygon.items())
+    polygons = get_polygons(roi)
+
+    superpixels = [poly for poly in polygons if get_class_from_roi(poly[0]) == 0]
+    annotations = [poly for poly in polygons if get_class_from_roi(poly[0]) > 0]
+    
+    final_superpixels = []
+
+    for annotation in annotations:
+        final_superpixels.append((int(annotation[0].split('-')[0] ), np.array(annotation[1]).astype(np.int32), np.array(annotation[2]).astype(np.int32)))
+
+    for superpixel in superpixels:
+        final_superpixels.append((0, np.array(superpixel[1]).astype(np.int32), np.array(superpixel[2]).astype(np.int32)))
+
+    result = np.zeros((768, 1024))
+    result_classes = []
+
+    ii = 1
+    print('annotations found', len(annotations))
+    print('superpixels found', len(superpixels))    
+    print('final superpixels found', len(final_superpixels))
+
+
+    # image = np.zeros((128, 128))
+    # image_shape = image.shape
+    # polygon = np.array([[1, 1], [1, 127], [127, 127], [127, 1]])
+    # mask = polygon2mask(image_shape, polygon)
+    # image[mask] = 1
+    # print(image.shape)
+    # print(mask)
+    # exit()
+    
+    for final_superpixel in final_superpixels:
+        dd = []
+
+        for i in range(len(final_superpixel[1])):
+            f_y = final_superpixel[2][i]
+            f_x = final_superpixel[1][i]
+            if(f_x == 1023):
+                f_x +=1
+            if(f_y == 767):
+                f_y +=1
+
+            dd.append([f_y, f_x])
+        
+        # print(dd)
+        # polyg = np.array((final_superpixel[1], final_superpixel[2])).tolist()
+        mask = polygon2mask(result.shape, dd)
+        result[mask] = ii
+        ii = ii + 1
+        result_classes.append(final_superpixel[0])
+        # print(ii)
+        # print('result[mask]', result[mask])
+        # print(result)
+
+    print('result min', min(min(x) for x in result))
+    print('result', max(max(x) for x in result))
+    print('result_classes', len(result_classes))
+    print('result result', sum(result[result == 0]))
+    
+    # for row in np.where(result == 0):
+    #     print(row)
+
+    # exit()
+
+    return result.astype(np.int32), result_classes
+
+### rewrite to be more efficient
+def get_superpixels(annotation_file_path):
+
+    annotation_polygon = filter_zip(annotation_file_path)
+    roi = list(annotation_polygon.items())
+    polygons = get_polygons(roi)
+
+    superpixels = [poly for poly in polygons if get_class_from_roi(poly[0]) == 0]
+    annotations = [poly for poly in polygons if get_class_from_roi(poly[0]) > 0]
+    
+    final_superpixels = []
+
+    for annotation in annotations:
+        final_superpixels.append((int(annotation[0].split('-')[0] ), np.array(annotation[1]).astype(np.int32), np.array(annotation[2]).astype(np.int32)))
+
+    for superpixel in superpixels:
+        final_superpixels.append((0, np.array(superpixel[1]).astype(np.int32), np.array(superpixel[2]).astype(np.int32)))
+
+    result = np.zeros((768, 1024))
+    result_classes = []
+
+    x, y = np.meshgrid(np.arange(1024), np.arange(768))
+    x, y = x.flatten(), y.flatten()
+    points = np.vstack((x,y)).T
+
+    ii = 1
+    print('annotations found', len(annotations))
+    print('superpixels found', len(superpixels))    
+    print('final superpixels found', len(final_superpixels))
+    
+    for final_superpixel in final_superpixels:
+        poly_verts = []
+        for i in range(len(final_superpixel[1])):
+            poly_verts.append((final_superpixel[1][i], final_superpixel[2][i]))
+
+        path = Path(poly_verts)
+        grid = path.contains_points(points)
+        grid = grid.reshape((768, 1024))
+        result[grid] = ii
+        result_classes.append(final_superpixel[0])
+        ii = ii + 1
+        # print(ii)
+
+    print(result)
+
+    return result, result_classes
+
+
+def create_image_json_data_for_image(image_name, name_mapping_dic, annotation_file_path):
     return {
         "id": name_mapping_dic[image_name],
         "width": 1024,
         "height": 768,
         "file_name": image_name,
-        "date_captured": "2013-11-15 02:41:42"
+        "date_captured": "2013-11-15 02:41:42",
+        "annotation_file_path": annotation_file_path
     }
 
 
@@ -176,7 +382,8 @@ def process_data(input_directory, output_directory, annotation_file_name='region
 
         copyfile(input_directory + image_name, output_directory + image_name)
 
-        final_images_data.append(create_image_json_data_for_image(image_name, name_mapping))
+        final_images_data.append(create_image_json_data_for_image(image_name, name_mapping, input_directory + annotation_filename))
+
         image_json = create_annotation_json_data_for_image(image_name, regions, name_mapping)
         final_annotations_data.append(image_json)
 
