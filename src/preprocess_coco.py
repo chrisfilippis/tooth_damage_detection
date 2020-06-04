@@ -90,6 +90,76 @@ def get_input_files(directory_path, extension='zip'):
 def get_polygons(roi_file):
     return [get_polygon_info(polygon) for polygon in roi_file]
 
+def myfunc(tup):
+    # print(tup[0].split(' '))
+    try:
+        return int(tup[0].split(' ')[1])
+    except IndexError:
+        return 1000
+
+def sorted_polygons(roi_file):
+    polygons = [get_polygon_info(polygon) for polygon in roi_file]
+
+    superpixels = [poly for poly in polygons if get_class_from_roi(poly[0]) == -1]
+    superpixels = sorted(superpixels, key=lambda tup: myfunc(tup))
+    annotations = [poly for poly in polygons if get_class_from_roi(poly[0]) >= 0]
+
+    init_name = 'superpixel 0'
+    
+    general_index = 0
+    final_polygons = []
+    total = len(superpixels) + len(annotations)
+    for superpixel in superpixels:
+        
+        # if(s_index == 0 and superpixel == init_name):
+        #     final_polygons.append(get_next(None, annotations))
+        
+        superpixel_index = int(superpixel[0].split(' ')[1])
+
+        element = superpixel
+
+        # print('general_index', general_index)
+        # print('superpixel_index', superpixel_index)
+        # print('-------------', superpixel_index - general_index)
+        if(superpixel_index - general_index >= 1):
+            elements_to_add = superpixel_index - general_index
+
+            print('elements_to_add', len(annotations))
+            # print('superpixel_index', superpixel_index)
+            while(elements_to_add > 0):
+                element = get_next(element, annotations)
+                final_polygons.append(element)
+                annotations.remove(element)
+                elements_to_add = elements_to_add - 1
+                general_index += 1
+                print('element added', element[0])
+
+        final_polygons.append(superpixel)        
+        general_index += 1
+
+    return final_polygons
+
+
+def get_next(superpixel, annotations):    
+    s_x = max(superpixel[1])
+    s_y = max(superpixel[2])
+    
+    dif_x = 1000
+    dif_y = 1000
+    
+    item = annotations[0]
+    for annotation in annotations:
+        
+        a_x = min(annotation[1])
+        a_y = min(annotation[2])
+
+        if(a_x - s_x < dif_x and a_y - s_y < dif_y):
+            dif_x = a_x - s_x
+            dif_y = a_y - s_y
+            item = annotation
+
+    return item
+
 
 def get_polygon_info(polygon):
     name = polygon[1]['name']
@@ -141,42 +211,49 @@ def get_class_from_roi(s):
     try: 
         return int(s.split('-')[0])
     except ValueError:
-        return 0
+        return -1
+
+def indices_array_generic(m,n):
+    res = []
+    for i in range(m):
+        for j in range(n):
+            res.append([i, j])
+    return res
+
+def get_mask_from_polygon_mpl(image_shape, polygon):
+  """Get a mask image of pixels inside the polygon.
+
+  Args:
+    image_shape: tuple of size 2.
+    polygon: Numpy array of dimension 2 (2xN).
+  """
+  xx, yy = np.meshgrid(np.arange(image_shape[1]), np.arange(image_shape[0]))
+  xx, yy = xx.flatten(), yy.flatten()
+  indices = np.vstack((xx, yy)).T
+  mask = Path(polygon).contains_points(indices)
+  mask = mask.reshape(image_shape)
+  mask = mask.astype('bool')
+  return mask
 
 
 def get_superpixels_new(annotation_file_path):
     annotation_polygon = filter_zip(annotation_file_path)
     roi = list(annotation_polygon.items())
-    polygons = get_polygons(roi)
+    polygons = sorted_polygons(roi)
 
-    superpixels = [poly for poly in polygons if get_class_from_roi(poly[0]) == 0]
-    annotations = [poly for poly in polygons if get_class_from_roi(poly[0]) > 0]
-    
     final_superpixels = []
 
-    for annotation in annotations:
-        final_superpixels.append((int(annotation[0].split('-')[0] ), np.array(annotation[1]).astype(np.int32), np.array(annotation[2]).astype(np.int32)))
-
-    for superpixel in superpixels:
-        final_superpixels.append((0, np.array(superpixel[1]).astype(np.int32), np.array(superpixel[2]).astype(np.int32)))
+    for polygon in polygons:
+        if(get_class_from_roi(polygon[0]) == -1):
+            final_superpixels.append((0, np.array(polygon[1]).astype(np.int32), np.array(polygon[2]).astype(np.int32)))
+        else:
+            final_superpixels.append((int(polygon[0].split('-')[0] ), np.array(polygon[1]).astype(np.int32), np.array(polygon[2]).astype(np.int32)))
 
     result = np.zeros((768, 1024))
     result_classes = []
 
     ii = 1
-    print('annotations found', len(annotations))
-    print('superpixels found', len(superpixels))    
     print('final superpixels found', len(final_superpixels))
-
-
-    # image = np.zeros((128, 128))
-    # image_shape = image.shape
-    # polygon = np.array([[1, 1], [1, 127], [127, 127], [127, 1]])
-    # mask = polygon2mask(image_shape, polygon)
-    # image[mask] = 1
-    # print(image.shape)
-    # print(mask)
-    # exit()
     
     for final_superpixel in final_superpixels:
         dd = []
@@ -184,33 +261,24 @@ def get_superpixels_new(annotation_file_path):
         for i in range(len(final_superpixel[1])):
             f_y = final_superpixel[2][i]
             f_x = final_superpixel[1][i]
-            if(f_x == 1023):
-                f_x +=1
-            if(f_y == 767):
-                f_y +=1
+            # if(f_x == 1023):
+            #     f_x +=1
+            # if(f_y == 767):
+            #     f_y +=1
 
             dd.append([f_y, f_x])
         
-        # print(dd)
-        # polyg = np.array((final_superpixel[1], final_superpixel[2])).tolist()
+
         mask = polygon2mask(result.shape, dd)
         result[mask] = ii
         ii = ii + 1
         result_classes.append(final_superpixel[0])
-        # print(ii)
-        # print('result[mask]', result[mask])
-        # print(result)
 
     print('result min', min(min(x) for x in result))
     print('result', max(max(x) for x in result))
     print('result_classes', len(result_classes))
     print('result result', sum(result[result == 0]))
     
-    # for row in np.where(result == 0):
-    #     print(row)
-
-    # exit()
-
     return result.astype(np.int32), result_classes
 
 ### rewrite to be more efficient
@@ -220,8 +288,8 @@ def get_superpixels(annotation_file_path):
     roi = list(annotation_polygon.items())
     polygons = get_polygons(roi)
 
-    superpixels = [poly for poly in polygons if get_class_from_roi(poly[0]) == 0]
-    annotations = [poly for poly in polygons if get_class_from_roi(poly[0]) > 0]
+    superpixels = [poly for poly in polygons if get_class_from_roi(poly[0]) == -1]
+    annotations = [poly for poly in polygons if get_class_from_roi(poly[0]) >= 0]
     
     final_superpixels = []
 

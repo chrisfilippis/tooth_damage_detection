@@ -66,9 +66,9 @@ def combine_masks_and_superpixels(masks, class_ids, superpixels):
     # for i in range(20):
     for i in range(n_superpixels):
         superpixel = superpixels == i
-        print('Superpixels: ', superpixels)
-        print('Superpixel: ', superpixel)
-        print('Superpixel volume: ', get_superpixel_volume(superpixel, superpixels, i))
+        # print('Superpixels: ', superpixels)
+        # print('Superpixel: ', superpixel)
+        # print('Superpixel volume: ', get_superpixel_volume(superpixel, superpixels, i))
         superpixel_classes = get_superpixel_classes(superpixel, masks, class_ids)
 
         # print('Superpixel classes found', superpixel_classes)
@@ -76,6 +76,7 @@ def combine_masks_and_superpixels(masks, class_ids, superpixels):
         if(len(superpixel_classes) > 0):
             final_class = decide_class(superpixel_classes)
             
+            # print('Superpixel data', superpixel)
             print('Superpixel ' + str(i) + ' class found ' +  str(final_class[0]))
         
             superpixels_classes.append(final_class[0])
@@ -85,7 +86,9 @@ def combine_masks_and_superpixels(masks, class_ids, superpixels):
             superpixels_bboxes.append(superpixel_bbox)
         else:
             # print('Superpixel ' + str(i) + ' class not found')
-            superpixels_classes.append(100)    
+            superpixels_classes.append(100)
+
+        # print('Superpixel ' + str(i))
 
     print('n_superpixels', n_superpixels)
     print('test_superpixels_classes_1', len(superpixels_classes))
@@ -112,6 +115,14 @@ def combine_masks_and_superpixels(masks, class_ids, superpixels):
         # sup_class = sup_class.astype(np.uint8)
 
         result_masks[superpixel] = sup_class
+
+    # print('2', np.where(superpixels_classes==2))
+    # print('1', np.where(superpixels_classes==1))
+
+    superpixels_classes = superpixels_classes.astype(np.int32)
+
+    superpixels_classes[superpixels_classes == 100] = 0
+    superpixels_classes[0] = 0
 
     return [{
         'class_ids': classes,
@@ -233,9 +244,12 @@ def get_superpixel_classes(superpixel, masks, class_ids):
         # print(class_ids)
         # print('Searhing for mask with index: ' + str(mask_index) + ' with class: ' + str(class_id))
         mask = masks[:, :, mask_index]
-      
+        # print(sum(mask[superpixel]))
+        # print(mask[superpixel])
         mask[mask == 1] = True
         mask[mask == 0] = False
+        # print(sum(mask[superpixel]))
+        # print(mask[superpixel])
 
         superpixel_values = sum(mask[superpixel])
 
@@ -278,6 +292,9 @@ def transform_masks_to_superpixel(results, original_image, original_image_annota
     # superpixels = create_superpixels(image=original_image)
     print('loading superpixels...')
     superpixels, superpixels_classes = get_superpixels_new(original_image_annotation)
+
+    print('2', np.where(np.array(superpixels_classes)==2))
+    print('1', np.where(np.array(superpixels_classes)==1))
     
     print('superpixels found.', superpixels.shape)
     print(str(len(superpixels_classes)) + ' superpixels classes found.')
@@ -285,13 +302,14 @@ def transform_masks_to_superpixel(results, original_image, original_image_annota
     print('combine_masks_and_superpixels...')
     result = combine_masks_and_superpixels(r['masks'].astype(np.uint8), r['class_ids'].astype(np.uint8), superpixels)
     predictions = result[0]['superpixels_classes']
-    predictions[predictions == 100] = 0
     
-    print('superpixels_classes', len(superpixels_classes))
-    print('result', predictions)
-    print('result', len(predictions))
+    print('2', np.where(predictions==2))
+    print('1', np.where(predictions==1))
+    
+    print('predictions', predictions)
+    print('superpixels_classes', superpixels_classes)
 
-    predictions[predictions == 100] = 0
+    print('result', len(predictions))
     
     predictions = merge_classes(classes=predictions, custom_mapping=None)
     superpixels_classes = merge_classes(classes=superpixels_classes, custom_mapping=None)

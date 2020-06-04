@@ -7,6 +7,12 @@ import imgaug.augmenters as iaa
 # which layers to train by name pattern.
 
 # es_callback = keras.callbacks.EarlyStopping(monitor='val_loss', mode='min', verbose=1)
+#    model.train(data_train, data_val,
+                # learning_rate=cfg.LEARNING_RATE,
+                # custom_callbacks=es_callback,
+                # epochs=60,
+                # layers='heads',
+                # augmentation=augmentation)
 
 # Save weights
 # Typically not needed because callbacks save after every epoch

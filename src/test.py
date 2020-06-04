@@ -20,7 +20,7 @@ def find_file(directory, image):
 
 # dd = get_superpixels('C:\Projects\\tooth_damage_detection\data\\annotator\\training\\ANN_antanastasios36_jpg_2020-05-31T15_58_22_506216600Z.zip')
 # dd = get_superpixels_new("C:\\Projects\\tooth_damage_detection\data\\annotator/validation/ANN_geotsampikos36_jpg_2018-12-09T19_12_28_786Z.zip")
-segments,s = get_superpixels_new("C:\\Projects\\tooth_damage_detection\\data\\annotator\\validation\\ANN_anaxristina37_2_jpg_2018-12-09T20_43_04_849Z.zip")
+segments,s = get_superpixels_new("C:\\Projects\\tooth_damage_detection\\data\\annotator/validation/ANN_gianikolaos46_jpg_2018-12-09T09_54_00_204Z.zip")
 # print(segments.astype(int))
 original_image = img_as_float(io.imread('C:\\Projects\\tooth_damage_detection\\data\\annotator\\validation\\anaxristina37_2.jpg'))
 # show the output of SLIC
