@@ -52,7 +52,7 @@ def get_bbox(img):
 
 def combine_masks_and_superpixels(masks, class_ids, superpixels):
     n_superpixels = max(max(x) for x in superpixels)
-    n_superpixels = int(n_superpixels)
+    n_superpixels = int(n_superpixels) + 1
     # print('Number of superpixels', n_superpixels)
     # print('Superpixels', superpixels.shape)
     
@@ -78,9 +78,10 @@ def combine_masks_and_superpixels(masks, class_ids, superpixels):
             
             # print('Superpixel data', superpixel)
             print('Superpixel ' + str(i) + ' class found ' +  str(final_class[0]))
-        
+
             superpixels_classes.append(final_class[0])
             superpixel_bbox = get_bbox(superpixel)
+            # print('superpixel_bbox ', superpixel_bbox)            
             # print('Superpixel volume: ', get_superpixel_volume(superpixel, superpixels, i))
             # print('superpixel_bbox: ', superpixel_bbox)
             superpixels_bboxes.append(superpixel_bbox)
@@ -93,16 +94,23 @@ def combine_masks_and_superpixels(masks, class_ids, superpixels):
     print('n_superpixels', n_superpixels)
     print('test_superpixels_classes_1', len(superpixels_classes))
     
+    # remove first item data
+    superpixels_bboxes.remove(superpixels_bboxes[0])
+    superpixels_classes[0] = 100
+
     superpixels_classes = np.array(superpixels_classes)
 
     print('test_superpixels_classes', len(superpixels_classes))
 
-    classes = np.unique(superpixels_classes[superpixels_classes != 100])
+    # classes = np.unique(superpixels_classes[superpixels_classes != 100])
     classes = superpixels_classes[superpixels_classes != 100]
+    
+    print('classes', len(superpixels_classes[superpixels_classes != 100]))
 
-    result_masks = np.zeros((superpixels.shape[0], superpixels.shape[1], classes.shape[0]))
+    result_masks = np.zeros((superpixels.shape[0], superpixels.shape[1], classes.shape[0]), dtype=int)
 
     # loop superpixels verticaly
+    actual_class_index = 0
     for i in range(n_superpixels):
         superpixel_class = superpixels_classes[i]
         
@@ -111,13 +119,18 @@ def combine_masks_and_superpixels(masks, class_ids, superpixels):
 
         superpixel = superpixels == i
     
-        sup_class = classes == superpixel_class
+        # sup_class = classes == superpixel_class
+        # print('superpixel_class', superpixel_class)
+        # print('classes', classes)
+        # print('sup_class', sup_class)
         # sup_class = sup_class.astype(np.uint8)
 
-        result_masks[superpixel] = sup_class
-
-    # print('2', np.where(superpixels_classes==2))
-    # print('1', np.where(superpixels_classes==1))
+        class_mask = np.zeros(classes.shape[0], dtype=int)
+        class_mask[actual_class_index] = 1
+        class_mask = class_mask.astype(np.bool)
+        # print('class_mask', class_mask)
+        result_masks[superpixel] = class_mask
+        actual_class_index += 1
 
     superpixels_classes = superpixels_classes.astype(np.int32)
 
@@ -129,7 +142,7 @@ def combine_masks_and_superpixels(masks, class_ids, superpixels):
         'masks': result_masks.astype(np.bool),
         'rois': np.array(superpixels_bboxes).astype(np.int32),
         'scores' : np.full((result_masks.shape[2],), 0.21).astype(np.float32),
-        'superpixels_classes': superpixels_classes.astype(np.int32)
+        'superpixels_classes': superpixels_classes
     }]
 
 
@@ -299,9 +312,14 @@ def transform_masks_to_superpixel(results, original_image, original_image_annota
     print('superpixels found.', superpixels.shape)
     print(str(len(superpixels_classes)) + ' superpixels classes found.')
 
+    print(r["masks"][-1][0])
+    print(r["masks"].shape)
+
     print('combine_masks_and_superpixels...')
     result = combine_masks_and_superpixels(r['masks'].astype(np.uint8), r['class_ids'].astype(np.uint8), superpixels)
     predictions = result[0]['superpixels_classes']
+    # print(result[0]["masks"][-1][0])
+    # print(result[0]["masks"].shape)
     
     print('2', np.where(predictions==2))
     print('1', np.where(predictions==1))
@@ -314,7 +332,7 @@ def transform_masks_to_superpixel(results, original_image, original_image_annota
     predictions = merge_classes(classes=predictions, custom_mapping=None)
     superpixels_classes = merge_classes(classes=superpixels_classes, custom_mapping=None)
 
-    conf_matrix = confusion_matrix(superpixels_classes, predictions, labels=merge_classes())
+    conf_matrix = confusion_matrix(superpixels_classes, predictions, labels=merge_class_labels())
 
     plt.figure()
     plot_confusion_matrix(conf_matrix, classes=set(merge_classes()), normalize=False, title='Confusion matrix, without normalization')
@@ -329,10 +347,19 @@ def transform_masks_to_superpixel(results, original_image, original_image_annota
         5:3,
         6:3 }
 
+    custom_mapping_labels = {
+        0:0,
+        1:1,
+        2:1,
+        3:2,
+        4:3,
+        5:3,
+        6:3 }
+
     predictions = merge_classes(classes=predictions, custom_mapping=custom_mapping)
     superpixels_classes = merge_classes(classes=superpixels_classes, custom_mapping=custom_mapping)
 
-    conf_matrix = confusion_matrix(superpixels_classes, predictions, labels=merge_classes(custom_mapping=custom_mapping))
+    conf_matrix = confusion_matrix(superpixels_classes, predictions, labels=merge_class_labels(custom_mapping=custom_mapping))
 
     plt.figure()
     plot_confusion_matrix(conf_matrix, classes=set(merge_classes(custom_mapping=custom_mapping)), normalize=False, title='Confusion matrix, without normalization')
@@ -340,10 +367,7 @@ def transform_masks_to_superpixel(results, original_image, original_image_annota
 
     return result
 
-
-def merge_classes(classes=None, custom_mapping=None):
-
-    init_mapping = {
+init_mapping = {
         0:0,
         1:1,
         2:2,
@@ -351,6 +375,18 @@ def merge_classes(classes=None, custom_mapping=None):
         4:4,
         5:5,
         6:6 }
+
+init_mapping_labels = {
+        0:0,
+        1:1,
+        2:2,
+        3:3,
+        4:4,
+        5:5,
+        6:6 }
+
+
+def merge_classes(classes=None, custom_mapping=None):
 
     mapping = init_mapping
 
@@ -362,8 +398,21 @@ def merge_classes(classes=None, custom_mapping=None):
 
     return [mapping[clas] for clas in classes]
 
+def merge_class_labels(classes=None, custom_mapping=None):
+
+    mapping = init_mapping_labels
+
+    if custom_mapping is not None:
+        mapping = custom_mapping
+
+    if classes is None:
+        return list(set(mapping.values()))
+
+    return [mapping[clas] for clas in classes]
+
 
 def display_colored_instances(original_image, boxes, masks, class_ids, class_names, scores=None):
+    
     colors = {
         "cat_1": (0, 0.5, 0),
         "cat_2": (0, 1, 1),

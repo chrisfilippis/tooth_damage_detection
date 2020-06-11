@@ -297,8 +297,8 @@ def measure_accuracy_superpixel(MODEL_DIRECTORY, data_train, dat_val):
     # Test on a random image
     img_id = random.choice(dat_val.image_ids)    
     # img_id = 10
-    img_id = 7
-    # img_id = 5
+    # img_id = 7
+    img_id = 5
     original_image, image_meta, gt_class_id, gt_bbox, gt_mask = \
         modellib.load_image_gt(dat_val, inference_config,
                                img_id, use_mini_mask=False)
@@ -312,12 +312,12 @@ def measure_accuracy_superpixel(MODEL_DIRECTORY, data_train, dat_val):
     log("gt_bbox", gt_bbox)
     log("gt_mask", gt_mask)
 
-    display_colored_instances(original_image, gt_bbox, gt_mask, gt_class_id, data_train.class_names, scores=None)
+    # display_colored_instances(original_image, gt_bbox, gt_mask, gt_class_id, data_train.class_names, scores=None)
     
     results = model.detect([original_image], verbose=1)
     r = results[0]
 
-    display_colored_instances(original_image, r['rois'], r['masks'], r['class_ids'], data_train.class_names, r['scores'])
+    # display_colored_instances(original_image, r['rois'], r['masks'], r['class_ids'], data_train.class_names, r['scores'])
 
     results = transform_masks_to_superpixel(results, original_image, dat_val.coco.imgs[img_id+1]['annotation_file_path'])
     r = results[0]

@@ -125,7 +125,8 @@ def sorted_polygons(roi_file):
             elements_to_add = superpixel_index - general_index
 
             print('elements_to_add', len(annotations))
-            # print('superpixel_index', superpixel_index)
+            print('superpixel_index', superpixel_index)
+            print('superpixel_index', general_index)
             while(elements_to_add > 0):
                 element = get_next(element, annotations)
                 final_polygons.append(element)
@@ -136,7 +137,9 @@ def sorted_polygons(roi_file):
 
         final_polygons.append(superpixel)        
         general_index += 1
-
+    print('final_polygons', final_polygons[253])
+    print('final_polygons', final_polygons[254])
+    
     return final_polygons
 
 
@@ -242,17 +245,17 @@ def get_superpixels_new(annotation_file_path):
     polygons = sorted_polygons(roi)
 
     final_superpixels = []
-
+    
     for polygon in polygons:
         if(get_class_from_roi(polygon[0]) == -1):
             final_superpixels.append((0, np.array(polygon[1]).astype(np.int32), np.array(polygon[2]).astype(np.int32)))
         else:
-            final_superpixels.append((int(polygon[0].split('-')[0] ), np.array(polygon[1]).astype(np.int32), np.array(polygon[2]).astype(np.int32)))
+            final_superpixels.append((int(polygon[0].split('-')[0]), np.array(polygon[1]).astype(np.int32), np.array(polygon[2]).astype(np.int32)))
 
-    result = np.zeros((768, 1024))
+    result = np.zeros((768, 1024), dtype=int)
     result_classes = []
 
-    ii = 1
+    ii = 0
     print('final superpixels found', len(final_superpixels))
     
     for final_superpixel in final_superpixels:
@@ -272,14 +275,21 @@ def get_superpixels_new(annotation_file_path):
         mask = polygon2mask(result.shape, dd)
         result[mask] = ii
         ii = ii + 1
+        
         result_classes.append(final_superpixel[0])
 
-    print('result min', min(min(x) for x in result))
-    print('result', max(max(x) for x in result))
+    # print('result min', min(min(x) for x in result))
+    # print('result', max(max(x) for x in result))
     print('result_classes', len(result_classes))
-    print('result result', sum(result[result == 0]))
+    # print('result result', sum(result[result == 0]))
     
-    return result.astype(np.int32), result_classes
+    return result, np.array(result_classes)
+
+
+def get_bbox(a):
+    #y1, x1, y2, x2
+    return np.array([np.min(a[0]), np.min(a[1]), np.max(a[0]), np.max(a[1])])
+
 
 ### rewrite to be more efficient
 def get_superpixels(annotation_file_path):
@@ -299,7 +309,7 @@ def get_superpixels(annotation_file_path):
     for superpixel in superpixels:
         final_superpixels.append((0, np.array(superpixel[1]).astype(np.int32), np.array(superpixel[2]).astype(np.int32)))
 
-    result = np.zeros((768, 1024))
+    result = np.zeros((768, 1024), dtype=int)
     result_classes = []
 
     x, y = np.meshgrid(np.arange(1024), np.arange(768))
