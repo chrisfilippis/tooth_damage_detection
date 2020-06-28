@@ -64,12 +64,7 @@ def schedule2(model, data_train, data_val, cfg):
                 epochs=120,
                 layers='all',
                 augmentation=augmentation)
-
-    model.train(data_train, data_val,
-                learning_rate=cfg.LEARNING_RATE/10,
-                epochs=140,
-                layers='all',
-                augmentation=augmentation)
+                
 
 def schedule3(model, data_train, data_val, cfg):
     

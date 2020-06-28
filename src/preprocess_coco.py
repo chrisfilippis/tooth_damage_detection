@@ -124,22 +124,20 @@ def sorted_polygons(roi_file):
         if(superpixel_index - general_index >= 1):
             elements_to_add = superpixel_index - general_index
 
-            print('elements_to_add', len(annotations))
-            print('superpixel_index', superpixel_index)
-            print('superpixel_index', general_index)
+            # print('elements_to_add', len(annotations))
+            # print('superpixel_index', superpixel_index)
+            # print('superpixel_index', general_index)
             while(elements_to_add > 0):
                 element = get_next(element, annotations)
                 final_polygons.append(element)
                 annotations.remove(element)
                 elements_to_add = elements_to_add - 1
                 general_index += 1
-                print('element added', element[0])
+                # print('element added', element[0])
 
         final_polygons.append(superpixel)        
         general_index += 1
-    print('final_polygons', final_polygons[253])
-    print('final_polygons', final_polygons[254])
-    
+        
     return final_polygons
 
 
@@ -256,7 +254,7 @@ def get_superpixels_new(annotation_file_path):
     result_classes = []
 
     ii = 0
-    print('final superpixels found', len(final_superpixels))
+    # print('final superpixels found', len(final_superpixels))
     
     for final_superpixel in final_superpixels:
         dd = []
@@ -280,7 +278,7 @@ def get_superpixels_new(annotation_file_path):
 
     # print('result min', min(min(x) for x in result))
     # print('result', max(max(x) for x in result))
-    print('result_classes', len(result_classes))
+    # print('result_classes', len(result_classes))
     # print('result result', sum(result[result == 0]))
     
     return result, np.array(result_classes)

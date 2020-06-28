@@ -12,8 +12,7 @@ from operator import itemgetter
 from itertools import groupby, product
 from mrcnn import visualize
 from preprocess_coco import get_superpixels, get_superpixels_new
-from sklearn.metrics import confusion_matrix
-import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix, accuracy_score, balanced_accuracy_score
 from mrcnn.model import log
 
 
@@ -77,7 +76,7 @@ def combine_masks_and_superpixels(masks, class_ids, superpixels):
             final_class = decide_class(superpixel_classes)
             
             # print('Superpixel data', superpixel)
-            print('Superpixel ' + str(i) + ' class found ' +  str(final_class[0]))
+            # print('Superpixel ' + str(i) + ' class found ' +  str(final_class[0]))
 
             superpixels_classes.append(final_class[0])
             superpixel_bbox = get_bbox(superpixel)
@@ -297,7 +296,33 @@ def get_superpixel_class_weight(superpixel, mask, class_id, mask_index):
     return np.sum(result)
 
 
-def transform_masks_to_superpixel(results, original_image, original_image_annotation):
+def custom_mappings():
+    return {
+        0:0,
+        1:1,
+        2:1,
+        3:2,
+        4:3,
+        5:3,
+        6:3 }
+
+
+def balanced(C, adjusted=False, sample_weight=None):
+    with np.errstate(divide='ignore', invalid='ignore'):
+        per_class = np.diag(C) / C.sum(axis=1)
+    if np.any(np.isnan(per_class)):
+        # warnings.warn('y_pred contains classes not in y_true')
+        per_class = per_class[~np.isnan(per_class)]
+    score = np.mean(per_class)
+    if adjusted:
+        n_classes = len(per_class)
+        chance = 1 / n_classes
+        score -= chance
+        score /= 1 - chance
+    return score
+
+
+def transform_masks_to_superpixel(results, original_image, original_image_annotation, return_metrics=False):
 
     print('annotation_file', original_image_annotation)
 
@@ -306,14 +331,14 @@ def transform_masks_to_superpixel(results, original_image, original_image_annota
     print('loading superpixels...')
     superpixels, superpixels_classes = get_superpixels_new(original_image_annotation)
 
-    print('2', np.where(np.array(superpixels_classes)==2))
-    print('1', np.where(np.array(superpixels_classes)==1))
+    # print('2', np.where(np.array(superpixels_classes)==2))
+    # print('1', np.where(np.array(superpixels_classes)==1))
     
-    print('superpixels found.', superpixels.shape)
+    # print('superpixels found.', superpixels.shape)
     print(str(len(superpixels_classes)) + ' superpixels classes found.')
 
-    print(r["masks"][-1][0])
-    print(r["masks"].shape)
+    # print(r["masks"][-1][0])
+    # print(r["masks"].shape)
 
     print('combine_masks_and_superpixels...')
     result = combine_masks_and_superpixels(r['masks'].astype(np.uint8), r['class_ids'].astype(np.uint8), superpixels)
@@ -321,51 +346,76 @@ def transform_masks_to_superpixel(results, original_image, original_image_annota
     # print(result[0]["masks"][-1][0])
     # print(result[0]["masks"].shape)
     
-    print('2', np.where(predictions==2))
-    print('1', np.where(predictions==1))
+    # print('2', np.where(predictions==2))
+    # print('1', np.where(predictions==1))
     
-    print('predictions', predictions)
-    print('superpixels_classes', superpixels_classes)
+    # print('predictions', predictions)
+    # print('superpixels_classes', superpixels_classes)
 
     print('result', len(predictions))
     
     predictions = merge_classes(classes=predictions, custom_mapping=None)
     superpixels_classes = merge_classes(classes=superpixels_classes, custom_mapping=None)
 
+    accuracy = accuracy_score(superpixels_classes, predictions)
+    balanced_accuracy = balanced_accuracy_score(superpixels_classes, predictions)
+
     conf_matrix = confusion_matrix(superpixels_classes, predictions, labels=merge_class_labels())
+    log("accuracy_score", accuracy)
+    log("balanced_accuracy_score", balanced_accuracy)
+    
+    plt.figure()
+    plot_confusion_matrix(conf_matrix, classes=set(merge_classes()), normalize=False, title='Confusion matrix, without normalization')
+    plt.show()
+
+    conf_matrix[0, 0] = 0
+
+    log("accuracy_score no bg", np.sum([conf_matrix[0, 0], conf_matrix[1,1], conf_matrix[2,2] ,conf_matrix[3,3] , conf_matrix[4,4], conf_matrix[5,5], conf_matrix[6,6]]) / np.sum(conf_matrix))
+    log("balanced_accuracy_score no bg", balanced(conf_matrix))
 
     plt.figure()
     plot_confusion_matrix(conf_matrix, classes=set(merge_classes()), normalize=False, title='Confusion matrix, without normalization')
     plt.show()
 
-    custom_mapping = {
-        0:0,
-        1:1,
-        2:1,
-        3:2,
-        4:3,
-        5:3,
-        6:3 }
+    predictions = merge_classes(classes=predictions, custom_mapping=custom_mappings())
+    superpixels_classes = merge_classes(classes=superpixels_classes, custom_mapping=custom_mappings())
 
-    custom_mapping_labels = {
-        0:0,
-        1:1,
-        2:1,
-        3:2,
-        4:3,
-        5:3,
-        6:3 }
+    conf_matrix_custom = confusion_matrix(superpixels_classes, predictions, labels=merge_class_labels(custom_mapping=custom_mappings()))
 
-    predictions = merge_classes(classes=predictions, custom_mapping=custom_mapping)
-    superpixels_classes = merge_classes(classes=superpixels_classes, custom_mapping=custom_mapping)
-
-    conf_matrix = confusion_matrix(superpixels_classes, predictions, labels=merge_class_labels(custom_mapping=custom_mapping))
+    accuracy_custom = accuracy_score(superpixels_classes, predictions)
+    balanced_accuracy_custom = balanced_accuracy_score(superpixels_classes, predictions)
+    
+    log("accuracy_score", accuracy_custom)
+    log("balanced_accuracy_score", balanced_accuracy_custom)
 
     plt.figure()
-    plot_confusion_matrix(conf_matrix, classes=set(merge_classes(custom_mapping=custom_mapping)), normalize=False, title='Confusion matrix, without normalization')
+    plot_confusion_matrix(conf_matrix_custom, classes=set(merge_classes(custom_mapping=custom_mappings())),  normalize=False, title='Confusion matrix, without normalization')
     plt.show()
 
-    return result
+    conf_matrix_custom[0, 0] = 0
+
+    log("accuracy_score no bg", np.sum([conf_matrix_custom[0, 0], conf_matrix_custom[1,1], conf_matrix_custom[2,2] ,conf_matrix_custom[3,3]]) / np.sum(conf_matrix_custom))
+    log("balanced_accuracy_score no bg", balanced(conf_matrix_custom))
+
+    plt.figure()
+    plot_confusion_matrix(conf_matrix_custom, classes=set(merge_classes(custom_mapping=custom_mappings())), normalize=False, title='Confusion matrix, without normalization')
+    plt.show()
+
+    if return_metrics:
+        return result, conf_matrix, conf_matrix_custom
+    else:
+        return result
+
+
+def transform_masks_to_superpixel_summary(results):
+
+    final_results = []
+ 
+    for result in results:
+        final_results.append(transform_masks_to_superpixel(result[0], result[1], result[2], True))
+
+    return final_results
+
 
 init_mapping = {
         0:0,
@@ -384,6 +434,7 @@ init_mapping_labels = {
         4:4,
         5:5,
         6:6 }
+
 
 
 def merge_classes(classes=None, custom_mapping=None):

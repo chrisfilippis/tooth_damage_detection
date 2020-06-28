@@ -17,8 +17,13 @@ from skimage.segmentation import slic
 from skimage.segmentation import mark_boundaries
 from skimage.util import img_as_float
 from skimage import io
-from customize import create_superpixels, combine_masks_and_superpixels, transform_masks_to_superpixel, display_colored_instances
+from sklearn.metrics import confusion_matrix, accuracy_score, balanced_accuracy_score
+from customize import create_superpixels, combine_masks_and_superpixels, transform_masks_to_superpixel, display_colored_instances, transform_masks_to_superpixel_summary, plot_confusion_matrix, merge_classes, custom_mappings
 import schedules
+import matplotlib
+matplotlib.use('tkagg')
+import matplotlib.pyplot as plt
+
 
 
 class ToothConfig(Config):
@@ -298,7 +303,13 @@ def measure_accuracy_superpixel(MODEL_DIRECTORY, data_train, dat_val):
     img_id = random.choice(dat_val.image_ids)    
     # img_id = 10
     # img_id = 7
-    img_id = 5
+    # img_id = 5
+    # img_id = 8
+    # img_id = 9
+
+    img_id = 6
+    # img_id = 1
+    
     original_image, image_meta, gt_class_id, gt_bbox, gt_mask = \
         modellib.load_image_gt(dat_val, inference_config,
                                img_id, use_mini_mask=False)
@@ -312,7 +323,8 @@ def measure_accuracy_superpixel(MODEL_DIRECTORY, data_train, dat_val):
     log("gt_bbox", gt_bbox)
     log("gt_mask", gt_mask)
 
-    # display_colored_instances(original_image, gt_bbox, gt_mask, gt_class_id, data_train.class_names, scores=None)
+    display_colored_instances(original_image, gt_bbox, gt_mask, gt_class_id, data_train.class_names, scores=None)
+    # return
     
     results = model.detect([original_image], verbose=1)
     r = results[0]
@@ -322,34 +334,61 @@ def measure_accuracy_superpixel(MODEL_DIRECTORY, data_train, dat_val):
     results = transform_masks_to_superpixel(results, original_image, dat_val.coco.imgs[img_id+1]['annotation_file_path'])
     r = results[0]
 
-    display_colored_instances(original_image, r['rois'], r['masks'], r['class_ids'], dat_val.class_names)
+    # display_colored_instances(original_image, r['rois'], r['masks'], r['class_ids'], dat_val.class_names)
 
-    log('rois', r['rois'])
-    log('masks', r['masks'])
-    log('class_ids', r['class_ids'])
-    log('scores', r['scores'])
+    # log('rois', r['rois'])
+    # log('masks', r['masks'])
+    # log('class_ids', r['class_ids'])
+    # log('scores', r['scores'])
     exit()
 
     # Compute VOC-Style mAP @ IoU=0.5
     # Running on 10 images. Increase for better accuracy.
-    image_ids = np.random.choice(data_train.image_ids, 10)
+    image_ids = np.random.choice(dat_val.image_ids, 15)
     APs = []
+    sums = []
     for img_id in image_ids:
         # Load image and ground truth data
         image, image_meta, gt_class_id, gt_bbox, gt_mask = \
-            modellib.load_image_gt(data_train, inference_config,
+            modellib.load_image_gt(dat_val, inference_config,
                                    img_id, use_mini_mask=False)
         molded_images = np.expand_dims(modellib.mold_image(image, inference_config), 0)
         # Run object detection
         results = model.detect([image], verbose=0)
         r = results[0]
+
+        sums.append((results, image, dat_val.coco.imgs[img_id+1]['annotation_file_path']))
+
+        log('rois', r['rois'])
+        log('masks', r['masks'])
+        log('class_ids', r['class_ids'])
+        log('scores', r['scores'])
         # Compute AP
         AP, precisions, recalls, overlaps = \
             utils.compute_ap(gt_bbox, gt_class_id, gt_mask,
                              r["rois"], r["class_ids"], r["scores"], r['masks'])
+
         APs.append(AP)
 
     print("mAP: ", np.mean(APs))
+
+    cm = np.zeros((7, 7), dtype=int)
+    cm_custom = np.zeros((4, 4), dtype=int)
+    
+    for i in transform_masks_to_superpixel_summary(sums):
+        print('cm1', np.array(i[1]))
+        print('cm_custom1', np.array(i[2]))
+        cm = np.add(cm, np.array(i[1]))
+        cm_custom = np.add(cm_custom, np.array(i[2]))
+
+    print('cm', cm)
+    print('cm_custom', cm_custom)
+
+    plot_confusion_matrix(cm, classes=set(merge_classes()), normalize=False, title='Confusion matrix, without normalization')
+    plt.show()
+    
+    plot_confusion_matrix(cm_custom, classes=set(merge_classes(custom_mapping=custom_mappings())), normalize=False, title='Confusion matrix, without normalization')
+    plt.show()
 
 
 def main():
@@ -364,6 +403,8 @@ def main():
 
     # measure_accuracy_superpixel("C:\\Users\\filippisc\Desktop\master\\new_tests\\results\\test_1", dataset_train, dataset_val)
     measure_accuracy_superpixel("C:\\Users\\filippisc\\Desktop\master\\final_tests\\new_data\\60head_50all", dataset_train, dataset_val)
+    # measure_accuracy_superpixel("C:\\Users\\filippisc\\Desktop\master\\final_tests\\new_data\\60head_404plus_20all_20alllearning", dataset_train, dataset_val)
+    # measure_accuracy_superpixel("C:\\Users\\filippisc\\Desktop\master\\final_tests\\new_data\\20head_204plus_40all", dataset_train, dataset_val)
     exit()
 
     # Directory to save logs and trained model
