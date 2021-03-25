@@ -38,7 +38,7 @@ pyparsing==2.4.0
 pyreadline==2.1
 python-dateutil==2.8.0
 PyWavelets==1.0.3
-PyYAML==5.1
+PyYAML==5.4
 read-roi==1.5.1
 scikit-image==0.15.0
 scipy==1.2.1
